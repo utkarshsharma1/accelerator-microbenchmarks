@@ -1,9 +1,9 @@
-# RankML
+# Microbenchmarks
 Microbenchmarks that assess the performance of individual operations and components on accelerators with JAX.
 
 ## Setup
 
-Setup the cloud TPU enviroment. 
+Setup the cloud TPU environment. 
 
 ## Running the code
 
