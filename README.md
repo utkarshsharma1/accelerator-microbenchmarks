@@ -10,5 +10,5 @@ Setup the cloud TPU environment.
 After setting up the environment, you can run the benchmark script using the following command:
 
 ```bash
-python3 benchmark_collective.py --ici_size=<ici_size> --dcn_size=<dcn_size>
+run_benchmark.py -config=sample_config.yaml
 ```
