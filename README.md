@@ -38,3 +38,16 @@ You can run the benchmarks with a config file:
 cd accelerator-microbenchmarks
 python src/run_benchmark.py --config=configs/sample_benchmark_matmul.yaml
 ```
+
+Create your own config.yaml file to customize the benchmarks and parameters you want to run. You may refer to the src/benchmark_*.py for the benchmarks and tunable parameters, or you may refer to the sample YAML files in configs/ directory. 
+
+
+## Examine the outputs
+
+The benchmarks will print metrics to the terminal. If you wish to dump formatted metrics in a file, you may set this parameter in your YAML file:
+* `csv_path`: Dumps the benchmark metrics in a CSV.
+Examples can be found in the YAML files under config/ directory.
+
+If you wish to generate the xprof profile, set this parameter in the YAML file:
+* `trace_dir`: Dumps the xprof profile to either a local location or GCS bucket.
+Examples can be found in the YAML files under config/ directory.
