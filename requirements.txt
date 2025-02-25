@@ -1,0 +1,7 @@
+jax[tpu]
+absl-py
+flax
+jaxlib
+numpy
+# For profiling
+tensorboard-plugin-profile
