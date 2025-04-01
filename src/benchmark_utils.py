@@ -85,7 +85,6 @@ def timeit_from_trace(f, *args, tries=10, task=None, trace_dir=None) -> float:
     """
     Time a function with jax.profiler and get the run time from the trace.
     """
-    outcomes_ms = []
     jax.block_until_ready(f(*args))  # warm it up!
 
     trace_name = f"t_{task}_" + "".join(

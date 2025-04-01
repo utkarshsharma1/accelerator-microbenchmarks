@@ -233,14 +233,6 @@ def run_single_benchmark(benchmark_config: Dict[str, Any]):
     # Run the benchmark
     calculate_metrics_results = []
     for benchmark_param in benchmark_params:
-        # Start a trace if requested
-        if trace_dir:
-            param_str = "_".join(f"{k}={v}" for k, v in benchmark_param.items())
-            max_param_len = 50
-            trace_name = f"t_{benchmark_name}_{param_str[:max_param_len]}" + "".join(
-                random.choices(string.ascii_uppercase + string.digits, k=10)
-            )
-            jax.profiler.start_trace(f"{trace_dir}/{trace_name}")
         benchmark_param = preprocess_benchmark_param(
             benchmark_param, trace_dir=trace_dir
         )
@@ -281,10 +273,6 @@ def run_single_benchmark(benchmark_config: Dict[str, Any]):
                 test_start_time,
                 test_end_time,
             )
-        # Dump trace.
-        if trace_dir:
-            jax.profiler.stop_trace()
-            print(f"Trace saved to {trace_dir}/{trace_name}")
 
     # Dump metrics to file.
     if csv_path:
