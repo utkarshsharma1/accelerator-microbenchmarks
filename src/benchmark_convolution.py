@@ -24,6 +24,7 @@ def convolve_common(
     convolve_fn: Callable[..., Any],
     task_name: str,
     num_runs: int,
+    trace_dir: str = None,
 ) -> Dict[str, Any]:
     """A helper function to run the convolution benchmark.
 
@@ -61,7 +62,12 @@ def convolve_common(
     time_ms_list = []
     for _ in range(num_runs):
         average_time_ms = simple_timeit(
-            convolve, x, kernel, padding_mode, task=task_name
+            convolve,
+            x,
+            kernel,
+            padding_mode,
+            task=task_name,
+            trace_dir=trace_dir,
         )
         time_ms_list.append(average_time_ms)
     return {"time_ms_list": time_ms_list, "output_shape": output.shape}
@@ -124,6 +130,7 @@ def numpy_convolve(
     kernel_size: int,
     padding_mode: str = "same",
     num_runs: int = 1,
+    trace_dir: str = None,
 ) -> float:
     """Benchmarks 1D convolution with jax.numpy.convolve."""
 
@@ -139,6 +146,7 @@ def numpy_convolve(
         convolve_fn,
         "numpy_convolve",
         num_runs=num_runs,
+        trace_dir=trace_dir,
     )
 
 
@@ -167,6 +175,7 @@ def scipy_signal_convolve(
     dimension: int,
     padding_mode: str = "same",
     num_runs: int = 1,
+    trace_dir: str = None,
 ) -> float:
     """Benchmarks N-dimensional convolution using jax.scipy.signal.convolve."""
 
@@ -182,6 +191,7 @@ def scipy_signal_convolve(
         convolve_fn,
         "scipy_signal_convolve",
         num_runs=num_runs,
+        trace_dir=trace_dir,
     )
 
 
@@ -210,6 +220,7 @@ def scipy_signal_convolve2d(
     kernel_size: int,
     padding_mode: str = "same",
     num_runs: int = 1,
+    trace_dir: str = None,
 ) -> float:
     """Benchmarks 2D convolution using jax.scipy.signal.convolve2d."""
     input_shape = (input_size, input_size)
@@ -225,6 +236,7 @@ def scipy_signal_convolve2d(
         convolve_fn,
         "scipy_signal_convolve2d",
         num_runs=num_runs,
+        trace_dir=trace_dir,
     )
 
 
@@ -261,6 +273,7 @@ def lax_conv_general_dilated(
     dtype: jax.numpy.dtype,
     dimension_numbers: Tuple[str, str, str] = ("NHWC", "HWIO", "NHWC"),
     num_runs: int = 1,
+    trace_dir: str = None,
 ) -> float:
     """Benchmarks convolution with jax.lax.conv_general_dilated."""
 
@@ -304,6 +317,7 @@ def lax_conv_general_dilated(
             dilation,
             padding_mode,
             task="lax_conv_general_dilated",
+            trace_dir=trace_dir,
         )
         time_ms_list.append(average_time_ms)
     return {"time_ms_list": time_ms_list, "output_shape": output.shape}

@@ -22,7 +22,10 @@ def get_metrics_helper(
 
 
 def single_chip_hbm_copy(
-    num_elements: int, dtype: jnp.dtype, num_runs: int = 1
+    num_elements: int,
+    dtype: jnp.dtype,
+    num_runs: int = 1,
+    trace_dir: str = None,
 ) -> Dict[str, Any]:
     """Benchmarks HBM with copy(read and write) on a single device."""
 
@@ -43,6 +46,7 @@ def single_chip_hbm_copy(
             jitted_f,
             a,
             task="single_chip_hbm_copy",
+            trace_dir=trace_dir,
         )
         time_ms_list.append(average_time_ms)
     return {"time_ms_list": time_ms_list}

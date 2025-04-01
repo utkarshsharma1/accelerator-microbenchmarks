@@ -51,7 +51,12 @@ def get_metrics_helper(
 
 
 def psum_benchmark(
-    matrix_dim: int, dtype: jnp.dtype, dcn_size: int, ici_size: int, num_runs: int = 1
+    matrix_dim: int,
+    dtype: jnp.dtype,
+    dcn_size: int,
+    ici_size: int,
+    num_runs: int = 1,
+    trace_dir: str = None,
 ) -> Dict[str, Any]:
     """Benchmarks the psum collective operation.
 
@@ -84,7 +89,10 @@ def psum_benchmark(
         dcn_average_time_ms_list = []
         for _ in range(num_runs):
             dcn_average_time_ms = simple_timeit(
-                jitted_op, sharded_matrix, task="psum_dcn_op"
+                jitted_op,
+                sharded_matrix,
+                task="psum_dcn_op",
+                trace_dir=trace_dir,
             )
             dcn_average_time_ms_list.append(dcn_average_time_ms)
 
@@ -102,7 +110,10 @@ def psum_benchmark(
         ici_average_time_ms_list = []
         for _ in range(num_runs):
             ici_average_time_ms = simple_timeit(
-                jitted_op, sharded_matrix, task="psum_ici_op"
+                jitted_op,
+                sharded_matrix,
+                task="psum_ici_op",
+                trace_dir=trace_dir,
             )
             ici_average_time_ms_list.append(ici_average_time_ms)
     return {
@@ -178,7 +189,12 @@ def psum_benchmark_calculate_metrics(
 
 
 def psum_scatter_benchmark(
-    matrix_dim: int, dtype: jnp.dtype, dcn_size: int, ici_size: int, num_runs: int = 1
+    matrix_dim: int,
+    dtype: jnp.dtype,
+    dcn_size: int,
+    ici_size: int,
+    num_runs: int = 1,
+    trace_dir: str = None,
 ) -> Dict[str, Any]:
     """Benchmarks the psum_scatter collective operation.
 
@@ -212,7 +228,10 @@ def psum_scatter_benchmark(
         dcn_average_time_ms_list = []
         for _ in range(num_runs):
             dcn_average_time_ms = simple_timeit(
-                jitted_op, sharded_matrix, task="psum_scatter_dcn_op"
+                jitted_op,
+                sharded_matrix,
+                task="psum_scatter_dcn_op",
+                trace_dir=trace_dir,
             )
             dcn_average_time_ms_list.append(dcn_average_time_ms)
 
@@ -230,7 +249,10 @@ def psum_scatter_benchmark(
         ici_average_time_ms_list = []
         for _ in range(num_runs):
             ici_average_time_ms = simple_timeit(
-                jitted_op, sharded_matrix, task="psum_scatter_ici_op"
+                jitted_op,
+                sharded_matrix,
+                task="psum_scatter_ici_op",
+                trace_dir=trace_dir,
             )
             ici_average_time_ms_list.append(ici_average_time_ms)
 
@@ -307,7 +329,12 @@ def psum_scatter_benchmark_calculate_metrics(
 
 
 def all_gather_benchmark(
-    matrix_dim: int, dtype: jnp.dtype, dcn_size: int, ici_size: int, num_runs: int = 1
+    matrix_dim: int,
+    dtype: jnp.dtype,
+    dcn_size: int,
+    ici_size: int,
+    num_runs: int = 1,
+    trace_dir: str = None,
 ) -> Dict[str, Any]:
     """Benchmarks the all_gather collective operation.
 
@@ -342,7 +369,10 @@ def all_gather_benchmark(
         dcn_average_time_ms_list = []
         for _ in range(num_runs):
             dcn_average_time_ms = simple_timeit(
-                jitted_op, sharded_matrix, task="all_gather_dcn_op"
+                jitted_op,
+                sharded_matrix,
+                task="all_gather_dcn_op",
+                trace_dir=trace_dir,
             )
             dcn_average_time_ms_list.append(dcn_average_time_ms)
 
@@ -366,7 +396,10 @@ def all_gather_benchmark(
         ici_average_time_ms_list = []
         for _ in range(num_runs):
             ici_average_time_ms = simple_timeit(
-                jitted_op, sharded_matrix, task="all_gather_ici_op"
+                jitted_op,
+                sharded_matrix,
+                task="all_gather_ici_op",
+                trace_dir=trace_dir,
             )
             ici_average_time_ms_list.append(ici_average_time_ms)
 
@@ -439,7 +472,12 @@ def all_gather_benchmark_calculate_metrics(
 
 
 def ppermute_benchmark(
-    matrix_dim: int, dtype: jnp.dtype, dcn_size: int, ici_size: int, num_runs: int = 1
+    matrix_dim: int,
+    dtype: jnp.dtype,
+    dcn_size: int,
+    ici_size: int,
+    num_runs: int = 1,
+    trace_dir: str = None,
 ) -> Dict[str, Any]:
     """Benchmarks the ppermute collective operation.
 
@@ -475,7 +513,10 @@ def ppermute_benchmark(
         dcn_average_time_ms_list = []
         for _ in range(num_runs):
             dcn_average_time_ms = simple_timeit(
-                jitted_op, sharded_matrix, task="ppermute_dcn_op"
+                jitted_op,
+                sharded_matrix,
+                task="ppermute_dcn_op",
+                trace_dir=trace_dir,
             )
             dcn_average_time_ms_list.append(dcn_average_time_ms)
 
@@ -494,7 +535,10 @@ def ppermute_benchmark(
         ici_average_time_ms_list = []
         for _ in range(num_runs):
             ici_average_time_ms = simple_timeit(
-                jitted_op, sharded_matrix, task="ppermute_ici_op"
+                jitted_op,
+                sharded_matrix,
+                task="ppermute_ici_op",
+                trace_dir=trace_dir,
             )
             ici_average_time_ms_list.append(ici_average_time_ms)
 
@@ -561,7 +605,12 @@ def ppermute_benchmark_calculate_metrics(
 
 
 def all_to_all_benchmark(
-    matrix_dim: int, dtype: jnp.dtype, dcn_size: int, ici_size: int, num_runs: int = 1
+    matrix_dim: int,
+    dtype: jnp.dtype,
+    dcn_size: int,
+    ici_size: int,
+    num_runs: int = 1,
+    trace_dir: str = None,
 ) -> Dict[str, Any]:
     """Benchmarks the all_to_all collective operation.
 
@@ -596,7 +645,10 @@ def all_to_all_benchmark(
         dcn_average_time_ms_list = []
         for _ in range(num_runs):
             dcn_average_time_ms = simple_timeit(
-                jitted_op, sharded_matrix, task="all_to_all_dcn_op"
+                jitted_op,
+                sharded_matrix,
+                task="all_to_all_dcn_op",
+                trace_dir=trace_dir,
             )
             dcn_average_time_ms_list.append(dcn_average_time_ms)
 
@@ -620,7 +672,10 @@ def all_to_all_benchmark(
         ici_average_time_ms_list = []
         for _ in range(num_runs):
             ici_average_time_ms = simple_timeit(
-                jitted_op, sharded_matrix, task="all_to_all_ici_op"
+                jitted_op,
+                sharded_matrix,
+                task="all_to_all_ici_op",
+                trace_dir=trace_dir,
             )
             ici_average_time_ms_list.append(ici_average_time_ms)
 
