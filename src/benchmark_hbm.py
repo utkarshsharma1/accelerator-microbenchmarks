@@ -70,8 +70,8 @@ def single_chip_hbm_copy_calculate_metrics(
         metrics_list=bw_gbyte_sec_list, metrics_name="bw_gbyte_sec"
     )
     print(
-        f"Tensor size: {tensor_size_bytes / 1024**2} MB, time taken (mean):"
-        f" {time_statistics.statistics['p50']:.4f} ms, bandwidth (mean): {statistics.statistics['p50']:.3f} GB/s"
+        f"Tensor size: {tensor_size_bytes / 1024**2} MB, time taken (median):"
+        f" {time_statistics.statistics['p50']:.4f} ms, bandwidth (median): {statistics.statistics['p50']:.3f} GB/s"
     )
     print()
     # Gather the metrics to report.

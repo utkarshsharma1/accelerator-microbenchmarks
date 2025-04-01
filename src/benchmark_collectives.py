@@ -147,7 +147,7 @@ def psum_benchmark_calculate_metrics(
         )
         print(
             f"psum_dcn: Matrix size: {matrix_dim}x{matrix_dim}, {dtype=}, "
-            f"{matrix_size_gbyte=}, achieved_bandwidth_gbyte_s (mean) = {dcn_bandwidth_gbyte_s_statistics.statistics['p50']}"
+            f"{matrix_size_gbyte=}, achieved_bandwidth_gbyte_s (median) = {dcn_bandwidth_gbyte_s_statistics.statistics['p50']}"
         )
     # Calculate metrics for ICI benchmark
     if ici_size > 1 and ici_average_time_ms_list is not None:
@@ -169,7 +169,7 @@ def psum_benchmark_calculate_metrics(
         )
         print(
             f"psum_ici: Matrix size: {matrix_dim}x{matrix_dim}, {dtype=}, "
-            f"{matrix_size_gbyte=}, achieved_bandwidth_gbyte_s (mean) = {ici_bandwidth_gbyte_s_statistics.statistics['p50']}"
+            f"{matrix_size_gbyte=}, achieved_bandwidth_gbyte_s (median) = {ici_bandwidth_gbyte_s_statistics.statistics['p50']}"
         )
     # Gather the metrics to report.
     metrics.update(ici_bandwidth_gbyte_s_statistics.serialize_statistics())
@@ -275,7 +275,7 @@ def psum_scatter_benchmark_calculate_metrics(
         )
         print(
             f"psum_scatter_dcn: Matrix size: {matrix_dim}x{matrix_dim}, {dtype=}, "
-            f"{matrix_size_gbyte=}, achieved_bandwidth_gbyte_s (mean) = {dcn_bandwidth_gbyte_s_statistics.statistics['p50']}"
+            f"{matrix_size_gbyte=}, achieved_bandwidth_gbyte_s (median) = {dcn_bandwidth_gbyte_s_statistics.statistics['p50']}"
         )
 
     # Calculate metrics for ICI benchmark
@@ -297,7 +297,7 @@ def psum_scatter_benchmark_calculate_metrics(
         )
         print(
             f"psum_scatter_ici: Matrix size: {matrix_dim}x{matrix_dim}, {dtype=}, "
-            f"{matrix_size_gbyte=}, achieved_bandwidth_gbyte_s (mean) = {ici_bandwidth_gbyte_s_statistics.statistics['p50']}"
+            f"{matrix_size_gbyte=}, achieved_bandwidth_gbyte_s (median) = {ici_bandwidth_gbyte_s_statistics.statistics['p50']}"
         )
     # Gather the metrics to report.
     metrics.update(ici_bandwidth_gbyte_s_statistics.serialize_statistics())
@@ -410,7 +410,7 @@ def all_gather_benchmark_calculate_metrics(
         )
         print(
             f"all_gather_dcn: Matrix size: {matrix_dim}x{matrix_dim}, {dtype=}, "
-            f"{matrix_size_gbyte=}, achieved_bandwidth_gbyte_s (mean) = {dcn_bandwidth_gbyte_s_statistics.statistics['p50']}"
+            f"{matrix_size_gbyte=}, achieved_bandwidth_gbyte_s (median) = {dcn_bandwidth_gbyte_s_statistics.statistics['p50']}"
         )
 
     # Calculate metrics for ICI benchmark
@@ -429,7 +429,7 @@ def all_gather_benchmark_calculate_metrics(
         )
         print(
             f"all_gather_ici: Matrix size: {matrix_dim}x{matrix_dim}, {dtype=}, "
-            f"{matrix_size_gbyte=}, achieved_bandwidth_gbyte_s (mean) = {ici_bandwidth_gbyte_s_statistics.statistics['p50']}"
+            f"{matrix_size_gbyte=}, achieved_bandwidth_gbyte_s (median) = {ici_bandwidth_gbyte_s_statistics.statistics['p50']}"
         )
     # Gather the metrics to report.
     metrics.update(ici_bandwidth_gbyte_s_statistics.serialize_statistics())
@@ -535,7 +535,7 @@ def ppermute_benchmark_calculate_metrics(
         )
         print(
             f"ppermute_dcn: Matrix size: {matrix_dim}x{matrix_dim}, {dtype=}, "
-            f"{matrix_size_gbyte=}, achieved_bandwidth_gbyte_s (mean) = {dcn_bandwidth_gbyte_s_statistics.statistics['p50']}"
+            f"{matrix_size_gbyte=}, achieved_bandwidth_gbyte_s (median) = {dcn_bandwidth_gbyte_s_statistics.statistics['p50']}"
         )
 
     # Calculate metrics for ICI benchmark
@@ -552,7 +552,7 @@ def ppermute_benchmark_calculate_metrics(
         )
         print(
             f"ppermute_ici: Matrix size: {matrix_dim}x{matrix_dim}, {dtype=}, "
-            f"{matrix_size_gbyte=}, achieved_bandwidth_gbyte_s (mean) = {ici_bandwidth_gbyte_s_statistics.statistics['p50']}"
+            f"{matrix_size_gbyte=}, achieved_bandwidth_gbyte_s (median) = {ici_bandwidth_gbyte_s_statistics.statistics['p50']}"
         )
 
     metrics.update(ici_bandwidth_gbyte_s_statistics.serialize_statistics())
@@ -663,7 +663,7 @@ def all_to_all_benchmark_calculate_metrics(
         )
         print(
             f"all_to_all_dcn: Matrix size: {matrix_dim}x{matrix_dim}, {dtype=}, "
-            f"{matrix_size_gbyte=}, achieved_bandwidth_gbyte_s (mean) = {dcn_bandwidth_gbyte_s_statistics.statistics['p50']}"
+            f"{matrix_size_gbyte=}, achieved_bandwidth_gbyte_s (median) = {dcn_bandwidth_gbyte_s_statistics.statistics['p50']}"
         )
 
     # Calculate metrics for ICI benchmark
@@ -684,7 +684,7 @@ def all_to_all_benchmark_calculate_metrics(
         )
         print(
             f"all_to_all_ici: Matrix size: {matrix_dim}x{matrix_dim}, {dtype=}, "
-            f"{matrix_size_gbyte=}, achieved_bandwidth_gbyte_s (mean) = {ici_bandwidth_gbyte_s_statistics.statistics['p50']}"
+            f"{matrix_size_gbyte=}, achieved_bandwidth_gbyte_s (median) = {ici_bandwidth_gbyte_s_statistics.statistics['p50']}"
         )
     # Gather the metrics to report.
     metrics.update(ici_bandwidth_gbyte_s_statistics.serialize_statistics())

@@ -133,8 +133,8 @@ def naive_matmul_calculate_metrics(
         metrics_name="data_transfer_gbyte_sec",
     )
     print(
-        f"Total floating-point ops: {total_flops}, Performance (mean):"
-        f" {tflops_per_sec_statistics.statistics['p50']:.2f} TFLOPs / second, Total GBs transferred (mean):"
+        f"Total floating-point ops: {total_flops}, Performance (median):"
+        f" {tflops_per_sec_statistics.statistics['p50']:.2f} TFLOPs / second, Total GBs transferred (median):"
         f" {total_gigabytes_transferred:.2f} GB, GBs per second:"
         f" {data_transfer_gbyte_sec_statistics.statistics['p50']:.2f} GB/s"
     )
@@ -209,8 +209,8 @@ def single_host_naive_matmul_calculate_metrics(
         metrics_name="data_transfer_gbyte_sec",
     )
     print(
-        f"Total floating-point ops: {total_flops}, Performance (mean):"
-        f" {tflops_per_sec_statistics.statistics['p50']:.2f} TFLOPs / second, Total GBs transferred (mean):"
+        f"Total floating-point ops: {total_flops}, Performance (median):"
+        f" {tflops_per_sec_statistics.statistics['p50']:.2f} TFLOPs / second, Total GBs transferred (median):"
         f" {total_gigabytes_transferred:.2f} GB, GBs per second:"
         f" {data_transfer_gbyte_sec_statistics.statistics['p50']:.2f} GB/s"
     )
@@ -311,7 +311,7 @@ def collective_matmul_one_direction_calculate_metrics(
         metrics_list=tflops_per_sec_list, metrics_name="tflops_per_sec"
     )
     print(
-        f"Total floating-point ops: {total_flops}, Performance (mean):"
+        f"Total floating-point ops: {total_flops}, Performance (median):"
         f" {tflops_per_sec_statistics.statistics['p50'] :.2f} TFLOPs / second"
     )
     print()
@@ -446,7 +446,7 @@ def collective_matmul_two_directions_calculate_metrics(
         metrics_list=tflops_per_sec_list, metrics_name="tflops_per_sec"
     )
     print(
-        f"Total floating-point ops: {total_flops}, Performance (mean):"
+        f"Total floating-point ops: {total_flops}, Performance (median):"
         f" {tflops_per_sec_statistics.statistics['p50'] :.2f} TFLOPs / second"
     )
     print()
@@ -528,7 +528,7 @@ def multilayer_collective_matmul_calculate_metrics(
         metrics_list=tflops_per_sec_list, metrics_name="tflops_per_sec"
     )
     print(
-        f"Total floating-point ops: {total_flops}, Performance (mean):"
+        f"Total floating-point ops: {total_flops}, Performance (median):"
         f" {tflops_per_sec_statistics.statistics['p50'] :.2f} TFLOPs / second"
     )
     print()

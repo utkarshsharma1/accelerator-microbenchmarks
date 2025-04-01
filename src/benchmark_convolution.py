@@ -110,7 +110,7 @@ def convolve_common_calculate_metrics(
     print(f"Total flops: {flops}")
     print(f"Average Execution Time: {time_ms_statistics.statistics['p50']:.4f} ms")
     print(
-        f"FLOPS Utilization(mean): {gflops_per_sec_statistics.statistics['p50']:.2f} GFLOPS/sec\n"
+        f"FLOPS Utilization(median): {gflops_per_sec_statistics.statistics['p50']:.2f} GFLOPS/sec\n"
     )
     # Gather the metrics to report.
     metadata.update({"total_flops": flops})
@@ -366,7 +366,7 @@ def lax_conv_general_dilated_calculate_metrics(
     print(f"Total flops: {flops}")
     print(f"Average Execution Time: {time_ms_statistics.statistics['p50']:.4f} ms")
     print(
-        f"FLOPS Utilization(mean): {gflops_per_sec_statistics.statistics['p50']:.2f} GFLOPS/sec\n"
+        f"FLOPS Utilization(median): {gflops_per_sec_statistics.statistics['p50']:.2f} GFLOPS/sec\n"
     )
     # Gather the metrics to report.
     metadata.update({"total_flops": flops})
