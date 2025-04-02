@@ -84,6 +84,17 @@ def get_metrics_from_trace(trace: dict[str, Any], task: str) -> float:
     return durations_ms
 
 
+def is_local_directory_path(dir: str) -> bool:
+    """
+    Returns true if the path is a local path.
+    """
+    if not dir:  # Handle None or empty string
+        return False
+
+    # Heuristics for local paths
+    return dir.startswith("/") or dir.startswith("./") or dir.startswith("../")
+
+
 def timeit_from_trace(f, *args, tries=10, task=None, trace_dir=None) -> float:
     """
     Time a function with jax.profiler and get the run time from the trace.
@@ -98,7 +109,7 @@ def timeit_from_trace(f, *args, tries=10, task=None, trace_dir=None) -> float:
     trace_full_dir = f"{trace_dir}/{trace_name}"
     tmp_trace_dir = trace_full_dir
     # If the trace_dir isn't a local path, create one for dumping the trace for parsing and getting metrics.
-    if trace_dir and not os.path.isdir(trace_dir):
+    if trace_dir and not is_local_directory_path(trace_dir):
         tmp_trace_dir = f"{LOCAL_TRACE_DIR}/{trace_name}"
     with jax.profiler.trace(tmp_trace_dir):
         for _ in range(tries):
@@ -157,10 +168,11 @@ def upload_to_storage(trace_dir: str, local_file: str):
     if trace_dir.startswith("gs://"):  # Google Cloud Storage (GCS)
         try:
             subprocess.run(
-                ["gsutil", "cp -r", local_file, trace_dir],
+                ["gsutil", "cp", "-r", local_file, trace_dir],
                 check=True,
                 capture_output=True,
             )
+
         except subprocess.CalledProcessError as e:
             print(
                 f"Failed to upload '{local_file}' to GCS: '{trace_dir}'. Error: {e.stderr.decode()}"
