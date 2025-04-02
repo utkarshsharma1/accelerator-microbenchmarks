@@ -134,6 +134,7 @@ def preprocess_benchmark_param(
                     f"Parameter {same_as_key} not found in the benchmark_param."
                 )
             benchmark_param[key] = benchmark_param[same_as_key]
+
     benchmark_param["trace_dir"] = trace_dir
     return benchmark_param
 
@@ -221,7 +222,7 @@ def run_single_benchmark(benchmark_config: Dict[str, Any]):
     csv_path = benchmark_config.get("csv_path")
     trace_dir = benchmark_config.get("trace_dir")
     xlml_metrics_dir = benchmark_config.get("xlml_metrics_dir")
-    # TODO(qinyiyan): Add support for parsing xplane.
+
     if not benchmark_name:
         raise ValueError("Each benchmark must have a 'benchmark_name'.")
 

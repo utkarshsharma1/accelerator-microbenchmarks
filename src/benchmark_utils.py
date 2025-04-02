@@ -14,6 +14,7 @@ import gzip
 import json
 import re
 from collections import defaultdict
+import subprocess
 
 
 def simple_timeit(f, *args, tries=10, task=None, trace_dir=None) -> float:
@@ -87,19 +88,29 @@ def timeit_from_trace(f, *args, tries=10, task=None, trace_dir=None) -> float:
     """
     Time a function with jax.profiler and get the run time from the trace.
     """
+    LOCAL_TRACE_DIR = "/tmp/microbenchmarks_tmptrace"
+
     jax.block_until_ready(f(*args))  # warm it up!
 
     trace_name = f"t_{task}_" + "".join(
         random.choices(string.ascii_uppercase + string.digits, k=10)
     )
     trace_full_dir = f"{trace_dir}/{trace_name}"
-    with jax.profiler.trace(trace_full_dir):
+    tmp_trace_dir = trace_full_dir
+    # If the trace_dir isn't a local path, create one for dumping the trace for parsing and getting metrics.
+    if trace_dir and not os.path.isdir(trace_dir):
+        tmp_trace_dir = f"{LOCAL_TRACE_DIR}/{trace_name}"
+    with jax.profiler.trace(tmp_trace_dir):
         for _ in range(tries):
             jax.devices()  # Force synchronization across devices
             with jax.profiler.TraceAnnotation(task):
                 jax.block_until_ready(f(*args))
 
-    trace = get_trace(trace_full_dir)
+    trace = get_trace(tmp_trace_dir)
+
+    if trace_full_dir != tmp_trace_dir:
+        # Upload the traces to desired location
+        upload_to_storage(trace_dir=trace_full_dir, local_file=tmp_trace_dir)
     return get_metrics_from_trace(trace, task)
 
 
@@ -136,6 +147,26 @@ def maybe_write_metrics_file(
     print(f"Writing metrics to JSONL file: {jsonl_path}")
     with jsonlines.open(jsonl_path, mode="a") as writer:
         writer.write(metrics_data)
+
+
+def upload_to_storage(trace_dir: str, local_file: str):
+    """
+    Uploads a local file to a specified storage location.
+    """
+
+    if trace_dir.startswith("gs://"):  # Google Cloud Storage (GCS)
+        try:
+            subprocess.run(
+                ["gsutil", "cp -r", local_file, trace_dir],
+                check=True,
+                capture_output=True,
+            )
+        except subprocess.CalledProcessError as e:
+            print(
+                f"Failed to upload '{local_file}' to GCS: '{trace_dir}'. Error: {e.stderr.decode()}"
+            )
+    else:
+        raise KeyError(f"{trace_dir} is not a valid GCS path.")
 
 
 class MetricsStatistics:
