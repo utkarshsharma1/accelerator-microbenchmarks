@@ -91,10 +91,10 @@ def psum_benchmark(
             dcn_average_time_ms = simple_timeit(
                 jitted_op,
                 sharded_matrix,
+                tries=num_runs,
                 task="psum_dcn_op",
                 trace_dir=trace_dir,
             )
-            dcn_average_time_ms_list.append(dcn_average_time_ms)
 
     # ICI benchmark
     if ici_size > 1:
@@ -107,15 +107,13 @@ def psum_benchmark(
             matrix, jax.sharding.NamedSharding(mesh, P(None, None))
         )
         jitted_op = jax.jit(psum_ici_op)
-        ici_average_time_ms_list = []
-        for _ in range(num_runs):
-            ici_average_time_ms = simple_timeit(
-                jitted_op,
-                sharded_matrix,
-                task="psum_ici_op",
-                trace_dir=trace_dir,
-            )
-            ici_average_time_ms_list.append(ici_average_time_ms)
+        ici_average_time_ms_list = simple_timeit(
+            jitted_op,
+            sharded_matrix,
+            tries=num_runs,
+            task="psum_ici_op",
+            trace_dir=trace_dir,
+        )
     return {
         "dcn_average_time_ms_list": dcn_average_time_ms_list,
         "ici_average_time_ms_list": ici_average_time_ms_list,
@@ -230,10 +228,10 @@ def psum_scatter_benchmark(
             dcn_average_time_ms = simple_timeit(
                 jitted_op,
                 sharded_matrix,
+                tries=num_runs,
                 task="psum_scatter_dcn_op",
                 trace_dir=trace_dir,
             )
-            dcn_average_time_ms_list.append(dcn_average_time_ms)
 
     # ICI benchmark
     if ici_size > 1:
@@ -246,15 +244,13 @@ def psum_scatter_benchmark(
             matrix, jax.sharding.NamedSharding(mesh, P(None, None))
         )
         jitted_op = jax.jit(psum_scatter_ici_op)
-        ici_average_time_ms_list = []
-        for _ in range(num_runs):
-            ici_average_time_ms = simple_timeit(
-                jitted_op,
-                sharded_matrix,
-                task="psum_scatter_ici_op",
-                trace_dir=trace_dir,
-            )
-            ici_average_time_ms_list.append(ici_average_time_ms)
+        ici_average_time_ms_list = simple_timeit(
+            jitted_op,
+            sharded_matrix,
+            tries=num_runs,
+            task="psum_scatter_ici_op",
+            trace_dir=trace_dir,
+        )
 
     return {
         "dcn_average_time_ms_list": dcn_average_time_ms_list,
@@ -371,10 +367,10 @@ def all_gather_benchmark(
             dcn_average_time_ms = simple_timeit(
                 jitted_op,
                 sharded_matrix,
+                tries=num_runs,
                 task="all_gather_dcn_op",
                 trace_dir=trace_dir,
             )
-            dcn_average_time_ms_list.append(dcn_average_time_ms)
 
     # ICI benchmark
     if ici_size > 1:
@@ -393,15 +389,13 @@ def all_gather_benchmark(
             matrix, jax.sharding.NamedSharding(mesh, P(None, None))
         )
         jitted_op = jax.jit(all_gather_ici_op)
-        ici_average_time_ms_list = []
-        for _ in range(num_runs):
-            ici_average_time_ms = simple_timeit(
-                jitted_op,
-                sharded_matrix,
-                task="all_gather_ici_op",
-                trace_dir=trace_dir,
-            )
-            ici_average_time_ms_list.append(ici_average_time_ms)
+        ici_average_time_ms_list = simple_timeit(
+            jitted_op,
+            sharded_matrix,
+            tries=num_runs,
+            task="all_gather_ici_op",
+            trace_dir=trace_dir,
+        )
 
     return {
         "dcn_average_time_ms_list": dcn_average_time_ms_list,
@@ -515,10 +509,10 @@ def ppermute_benchmark(
             dcn_average_time_ms = simple_timeit(
                 jitted_op,
                 sharded_matrix,
+                tries=num_runs,
                 task="ppermute_dcn_op",
                 trace_dir=trace_dir,
             )
-            dcn_average_time_ms_list.append(dcn_average_time_ms)
 
     # ICI benchmark
     if ici_size > 1:
@@ -532,15 +526,13 @@ def ppermute_benchmark(
             matrix, jax.sharding.NamedSharding(mesh, P(None, None))
         )
         jitted_op = jax.jit(ppermute_ici_op)
-        ici_average_time_ms_list = []
-        for _ in range(num_runs):
-            ici_average_time_ms = simple_timeit(
-                jitted_op,
-                sharded_matrix,
-                task="ppermute_ici_op",
-                trace_dir=trace_dir,
-            )
-            ici_average_time_ms_list.append(ici_average_time_ms)
+        ici_average_time_ms_list = simple_timeit(
+            jitted_op,
+            sharded_matrix,
+            tries=num_runs,
+            task="ppermute_ici_op",
+            trace_dir=trace_dir,
+        )
 
     return {
         "dcn_average_time_ms_list": dcn_average_time_ms_list,
@@ -642,15 +634,13 @@ def all_to_all_benchmark(
             matrix, jax.sharding.NamedSharding(mesh, P("dcn", None))
         )
         jitted_op = jax.jit(all_to_all_dcn_op)
-        dcn_average_time_ms_list = []
-        for _ in range(num_runs):
-            dcn_average_time_ms = simple_timeit(
-                jitted_op,
-                sharded_matrix,
-                task="all_to_all_dcn_op",
-                trace_dir=trace_dir,
-            )
-            dcn_average_time_ms_list.append(dcn_average_time_ms)
+        dcn_average_time_ms_list = simple_timeit(
+            jitted_op,
+            sharded_matrix,
+            tries=num_runs,
+            task="all_to_all_dcn_op",
+            trace_dir=trace_dir,
+        )
 
     # ICI benchmark
     if ici_size > 1:
@@ -669,15 +659,13 @@ def all_to_all_benchmark(
             matrix, jax.sharding.NamedSharding(mesh, P(None, None))
         )
         jitted_op = jax.jit(all_to_all_ici_op)
-        ici_average_time_ms_list = []
-        for _ in range(num_runs):
-            ici_average_time_ms = simple_timeit(
-                jitted_op,
-                sharded_matrix,
-                task="all_to_all_ici_op",
-                trace_dir=trace_dir,
-            )
-            ici_average_time_ms_list.append(ici_average_time_ms)
+        ici_average_time_ms_list = simple_timeit(
+            jitted_op,
+            sharded_matrix,
+            tries=num_runs,
+            task="all_to_all_ici_op",
+            trace_dir=trace_dir,
+        )
 
     return {
         "dcn_average_time_ms_list": dcn_average_time_ms_list,

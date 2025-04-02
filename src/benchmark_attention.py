@@ -113,19 +113,17 @@ def naive_attention_benchmark(
     jax.block_until_ready(output)
 
     # Run benchmark
-    time_ms_list = []
-    for _ in range(num_runs):
-        average_time_ms = simple_timeit(
-            naive_attention,
-            q,
-            k,
-            v,
-            causal,
-            scale,
-            task="naive_attention",
-            trace_dir=trace_dir,
-        )
-        time_ms_list.append(average_time_ms)
+    time_ms_list = simple_timeit(
+        naive_attention,
+        q,
+        k,
+        v,
+        causal,
+        scale,
+        tries=num_runs,
+        task="naive_attention",
+        trace_dir=trace_dir,
+    )
     return {"time_ms_list": time_ms_list, "output": output}
 
 
@@ -170,18 +168,16 @@ def pallas_flash_attention_benchmark(
     jax.block_until_ready(output)
 
     # Run benchmark
-    time_ms_list = []
-    for _ in range(num_runs):
-        average_time_ms = simple_timeit(
-            pallas_attention,
-            q,
-            k,
-            v,
-            causal,
-            task="pallas_flash_attention",
-            trace_dir=trace_dir,
-        )
-        time_ms_list.append(average_time_ms)
+    time_ms_list = simple_timeit(
+        pallas_attention,
+        q,
+        k,
+        v,
+        causal,
+        tries=num_runs,
+        task="pallas_flash_attention",
+        trace_dir=trace_dir,
+    )
     return {"time_ms_list": time_ms_list, "output": output}
 
 
@@ -255,18 +251,16 @@ def splash_attention_benchmark(
     jax.block_until_ready(output)
 
     # Run benchmark
-    time_ms_list = []
-    for _ in range(num_runs):
-        average_time_ms = simple_timeit(
-            splash_attention,
-            q,
-            k,
-            v,
-            causal,
-            task="splash_attention",
-            trace_dir=trace_dir,
-        )
-        time_ms_list.append(average_time_ms)
+    time_ms_list = simple_timeit(
+        splash_attention,
+        q,
+        k,
+        v,
+        causal,
+        tries=num_runs,
+        task="splash_attention",
+        trace_dir=trace_dir,
+    )
     return {"time_ms_list": time_ms_list, "output": output}
 
 
@@ -314,17 +308,15 @@ def flax_nnx_attention_benchmark(
     jax.block_until_ready(output)
 
     # Run benchmark
-    time_ms_list = []
-    for _ in range(num_runs):
-        average_time_ms = simple_timeit(
-            flax_attention,
-            q,
-            k,
-            v,
-            task="flax_attention",
-            trace_dir=trace_dir,
-        )
-        time_ms_list.append(average_time_ms)
+    time_ms_list = simple_timeit(
+        flax_attention,
+        q,
+        k,
+        v,
+        tries=num_runs,
+        task="flax_attention",
+        trace_dir=trace_dir,
+    )
     return {"time_ms_list": time_ms_list, "output": output}
 
 
@@ -370,17 +362,15 @@ def flax_linen_attention_benchmark(
     jax.block_until_ready(output)
 
     # Run benchmark
-    time_ms_list = []
-    for _ in range(num_runs):
-        average_time_ms = simple_timeit(
-            flax_attention,
-            q,
-            k,
-            v,
-            task="flax_attention",
-            trace_dir=trace_dir,
-        )
-        time_ms_list.append(average_time_ms)
+    time_ms_list = simple_timeit(
+        flax_attention,
+        q,
+        k,
+        v,
+        tries=num_runs,
+        task="flax_attention",
+        trace_dir=trace_dir,
+    )
     return {"time_ms_list": time_ms_list, "output": output}
 
 
@@ -436,18 +426,16 @@ def keras_attention_benchmark(
     jax.block_until_ready(output)
 
     # Run benchmark
-    time_ms_list = []
-    for _ in range(num_runs):
-        average_time_ms = simple_timeit(
-            keras_attention,
-            q,
-            k,
-            v,
-            causal,
-            task="keras_attention",
-            trace_dir=trace_dir,
-        )
-        time_ms_list.append(average_time_ms)
+    time_ms_list = simple_timeit(
+        keras_attention,
+        q,
+        k,
+        v,
+        causal,
+        tries=num_runs,
+        task="keras_attention",
+        trace_dir=trace_dir,
+    )
     return {"time_ms_list": time_ms_list, "output": output}
 
 

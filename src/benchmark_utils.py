@@ -31,6 +31,7 @@ def simple_timeit(f, *args, tries=10, task=None, trace_dir=None) -> float:
         jax.block_until_ready(f(*args))
         e = datetime.datetime.now()
         outcomes_ms.append(1000 * (e - s).total_seconds())
+    return outcomes_ms
 
 
 def get_trace(log_dir: str) -> dict[str, Any]:
@@ -78,7 +79,7 @@ def get_metrics_from_trace(trace: dict[str, Any], task: str) -> float:
     except KeyError:
         print("KeyError: Key 'dur' not found in the event object")
         raise
-    return np.average(durations)
+    return durations
 
 
 def timeit_from_trace(f, *args, tries=10, task=None, trace_dir=None) -> float:

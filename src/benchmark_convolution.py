@@ -59,17 +59,15 @@ def convolve_common(
     )
 
     # Time the operation
-    time_ms_list = []
-    for _ in range(num_runs):
-        average_time_ms = simple_timeit(
-            convolve,
-            x,
-            kernel,
-            padding_mode,
-            task=task_name,
-            trace_dir=trace_dir,
-        )
-        time_ms_list.append(average_time_ms)
+    time_ms_list = simple_timeit(
+        convolve,
+        x,
+        kernel,
+        padding_mode,
+        tries=num_runs,
+        task=task_name,
+        trace_dir=trace_dir,
+    )
     return {"time_ms_list": time_ms_list, "output_shape": output.shape}
 
 
@@ -307,19 +305,17 @@ def lax_conv_general_dilated(
     )
 
     # Time the operation
-    time_ms_list = []
-    for _ in range(num_runs):
-        average_time_ms = simple_timeit(
-            convolve,
-            x,
-            kernel,
-            stride,
-            dilation,
-            padding_mode,
-            task="lax_conv_general_dilated",
-            trace_dir=trace_dir,
-        )
-        time_ms_list.append(average_time_ms)
+    time_ms_list = simple_timeit(
+        convolve,
+        x,
+        kernel,
+        stride,
+        dilation,
+        padding_mode,
+        tries=num_runs,
+        task="lax_conv_general_dilated",
+        trace_dir=trace_dir,
+    )
     return {"time_ms_list": time_ms_list, "output_shape": output.shape}
 
 

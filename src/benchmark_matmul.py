@@ -95,16 +95,14 @@ def naive_matmul(
     jax.block_until_ready(output)  # Ensure full completion before printing metrics
     print(f"{lhs.shape=} x {rhs.shape=} = {output.shape=}, {output.dtype=}")
     # Run the benchmark
-    time_ms_list = []
-    for _ in range(num_runs):
-        average_time_ms = simple_timeit(
-            jit_sharded_f,
-            lhs,
-            rhs,
-            task="naive_matmul",
-            trace_dir=trace_dir,
-        )
-        time_ms_list.append(average_time_ms)
+    time_ms_list = simple_timeit(
+        jit_sharded_f,
+        lhs,
+        rhs,
+        tries=num_runs,
+        task="naive_matmul",
+        trace_dir=trace_dir,
+    )
     return {"time_ms_list": time_ms_list}
 
 
@@ -172,16 +170,14 @@ def single_host_naive_matmul(
     jax.block_until_ready(output)
     print(f"{lhs.shape=} x {rhs.shape=} = {output.shape=}, {output.dtype=}")
     # Run the benchmark
-    time_ms_list = []
-    for _ in range(num_runs):
-        average_time_ms = simple_timeit(
-            jitted_f,
-            lhs,
-            rhs,
-            task="single_host_naive_matmul",
-            trace_dir=trace_dir,
-        )
-        time_ms_list.append(average_time_ms)
+    time_ms_list = simple_timeit(
+        jitted_f,
+        lhs,
+        rhs,
+        tries=num_runs,
+        task="single_host_naive_matmul",
+        trace_dir=trace_dir,
+    )
     return {"time_ms_list": time_ms_list}
 
 
@@ -287,16 +283,14 @@ def collective_matmul_one_direction(
     output = jit_sharded_f(lhs, rhs)
     jax.block_until_ready(output)  # Ensure full completion before printing metrics
     print(f"{lhs.shape=} x {rhs.shape=} = {output.shape=}, {output.dtype=}")
-    time_ms_list = []
-    for _ in range(num_runs):
-        average_time_ms = simple_timeit(
-            jit_sharded_f,
-            lhs,
-            rhs,
-            task="collective_matmul_one_direction",
-            trace_dir=trace_dir,
-        )
-        time_ms_list.append(average_time_ms)
+    time_ms_list = simple_timeit(
+        jit_sharded_f,
+        lhs,
+        rhs,
+        tries=num_runs,
+        task="collective_matmul_one_direction",
+        trace_dir=trace_dir,
+    )
     return {"time_ms_list": time_ms_list}
 
 
@@ -426,16 +420,14 @@ def collective_matmul_two_directions(
     jax.block_until_ready(output)  # Ensure full completion before printing metrics
     print(f"{lhs.shape=} x {rhs.shape=} = {output.shape=}, {output.dtype=}")
     # Run the benchmark.
-    time_ms_list = []
-    for _ in range(num_runs):
-        average_time_ms = simple_timeit(
-            jit_sharded_f,
-            lhs,
-            rhs,
-            task="collective_matmul_two_directions",
-            trace_dir=trace_dir,
-        )
-        time_ms_list.append(average_time_ms)
+    time_ms_list = simple_timeit(
+        jit_sharded_f,
+        lhs,
+        rhs,
+        tries=num_runs,
+        task="collective_matmul_two_directions",
+        trace_dir=trace_dir,
+    )
     return {"time_ms_list": time_ms_list}
 
 
@@ -510,16 +502,13 @@ def multilayer_collective_matmul(
     print(f"Activation shape: {activation.shape}")
     print("Weights shapes:", [w.shape for w in weights])
     print(f"Output shape: {output.shape}, Output dtype: {output.dtype}")
-    time_ms_list = []
-    for _ in range(num_runs):
-        average_time_ms = simple_timeit(
-            jit_sharded_f,
-            activation,
-            weights,
-            task="collective_multilayer_matmul",
-            trace_dir=trace_dir,
-        )
-        time_ms_list.append(average_time_ms)
+    time_ms_list = simple_timeit(
+        jit_sharded_f,
+        activation,
+        weights,
+        task="collective_multilayer_matmul",
+        trace_dir=trace_dir,
+    )
     return {"time_ms_list": time_ms_list}
 
 

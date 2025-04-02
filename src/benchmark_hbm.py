@@ -40,15 +40,13 @@ def single_chip_hbm_copy(
     jax.block_until_ready(output)
 
     # Run the benchmark
-    time_ms_list = []
-    for _ in range(num_runs):
-        average_time_ms = simple_timeit(
-            jitted_f,
-            a,
-            task="single_chip_hbm_copy",
-            trace_dir=trace_dir,
-        )
-        time_ms_list.append(average_time_ms)
+    time_ms_list = simple_timeit(
+        jitted_f,
+        a,
+        tries=num_runs,
+        task="single_chip_hbm_copy",
+        trace_dir=trace_dir,
+    )
     return {"time_ms_list": time_ms_list}
 
 
