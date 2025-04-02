@@ -73,13 +73,14 @@ def get_metrics_from_trace(trace: dict[str, Any], task: str) -> float:
         events_by_run_id[run_id].append(e)
 
     try:
-        durations = [
-            max([e["dur"] for e in es]) / 1e6 for run_id, es in events_by_run_id.items()
+        # Duration is in us.
+        durations_ms = [
+            max([e["dur"] for e in es]) / 1e3 for run_id, es in events_by_run_id.items()
         ]
     except KeyError:
         print("KeyError: Key 'dur' not found in the event object")
         raise
-    return durations
+    return durations_ms
 
 
 def timeit_from_trace(f, *args, tries=10, task=None, trace_dir=None) -> float:
