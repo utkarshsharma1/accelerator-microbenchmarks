@@ -576,6 +576,7 @@ def ppermute_benchmark_calculate_metrics(
             f"ppermute_dcn: Matrix size: {matrix_dim}x{matrix_dim}, {dtype=}, "
             f"{matrix_size_gbyte=}, achieved_bandwidth_gbyte_s (median) = {dcn_bandwidth_gbyte_s_statistics.statistics['p50']}"
         )
+        metrics.update(dcn_bandwidth_gbyte_s_statistics.serialize_statistics())
 
     # Calculate metrics for ICI benchmark
     if ici_size > 1 and ici_average_time_ms_list is not None:
@@ -593,9 +594,7 @@ def ppermute_benchmark_calculate_metrics(
             f"ppermute_ici: Matrix size: {matrix_dim}x{matrix_dim}, {dtype=}, "
             f"{matrix_size_gbyte=}, achieved_bandwidth_gbyte_s (median) = {ici_bandwidth_gbyte_s_statistics.statistics['p50']}"
         )
-
-    metrics.update(ici_bandwidth_gbyte_s_statistics.serialize_statistics())
-    metrics.update(dcn_bandwidth_gbyte_s_statistics.serialize_statistics())
+        metrics.update(ici_bandwidth_gbyte_s_statistics.serialize_statistics())
     return metadata, metrics
 
 
