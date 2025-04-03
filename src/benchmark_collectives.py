@@ -74,7 +74,8 @@ def psum_benchmark(
     """
     mesh, _, _ = create_mesh(dcn_size, ici_size)
     matrix = jnp.ones((matrix_dim, matrix_dim), dtype=dtype)
-
+    dcn_average_time_ms_list = []
+    ici_average_time_ms_list = []
     # DCN benchmark
     if dcn_size > 1:
 
@@ -86,9 +87,8 @@ def psum_benchmark(
             matrix, jax.sharding.NamedSharding(mesh, P("dcn", None))
         )
         jitted_op = jax.jit(psum_dcn_op)
-        dcn_average_time_ms_list = []
         for _ in range(num_runs):
-            dcn_average_time_ms = simple_timeit(
+            dcn_average_time_ms_list = simple_timeit(
                 jitted_op,
                 sharded_matrix,
                 tries=num_runs,
@@ -210,6 +210,8 @@ def psum_scatter_benchmark(
     """
     mesh, _, _ = create_mesh(dcn_size, ici_size)
     matrix = jnp.ones((matrix_dim, matrix_dim), dtype=dtype)
+    dcn_average_time_ms_list = []
+    ici_average_time_ms_list = []
     # DCN benchmark
     if dcn_size > 1:
 
@@ -223,9 +225,9 @@ def psum_scatter_benchmark(
             matrix, jax.sharding.NamedSharding(mesh, P("dcn", None))
         )
         jitted_op = jax.jit(psum_scatter_dcn_op)
-        dcn_average_time_ms_list = []
+
         for _ in range(num_runs):
-            dcn_average_time_ms = simple_timeit(
+            dcn_average_time_ms_list = simple_timeit(
                 jitted_op,
                 sharded_matrix,
                 tries=num_runs,
@@ -348,6 +350,8 @@ def all_gather_benchmark(
     """
     mesh, _, _ = create_mesh(dcn_size, ici_size)
     matrix = jnp.ones((matrix_dim, matrix_dim), dtype=dtype)
+    dcn_average_time_ms_list = []
+    ici_average_time_ms_list = []
 
     # DCN benchmark
     if dcn_size > 1:
@@ -362,9 +366,9 @@ def all_gather_benchmark(
             matrix, jax.sharding.NamedSharding(mesh, P("dcn", None))
         )
         jitted_op = jax.jit(all_gather_dcn_op)
-        dcn_average_time_ms_list = []
+
         for _ in range(num_runs):
-            dcn_average_time_ms = simple_timeit(
+            dcn_average_time_ms_list = simple_timeit(
                 jitted_op,
                 sharded_matrix,
                 tries=num_runs,
@@ -489,6 +493,8 @@ def ppermute_benchmark(
     """
     mesh, _, _ = create_mesh(dcn_size, ici_size)
     matrix = jnp.ones((matrix_dim, matrix_dim), dtype=dtype)
+    dcn_average_time_ms_list = []
+    ici_average_time_ms_list = []
 
     # DCN benchmark
     if dcn_size > 1:
@@ -504,9 +510,9 @@ def ppermute_benchmark(
             matrix, jax.sharding.NamedSharding(mesh, P("dcn", None))
         )
         jitted_op = jax.jit(ppermute_dcn_op)
-        dcn_average_time_ms_list = []
+
         for _ in range(num_runs):
-            dcn_average_time_ms = simple_timeit(
+            dcn_average_time_ms_list = simple_timeit(
                 jitted_op,
                 sharded_matrix,
                 tries=num_runs,
@@ -620,6 +626,8 @@ def all_to_all_benchmark(
     """
     mesh, _, _ = create_mesh(dcn_size, ici_size)
     matrix = jnp.ones((matrix_dim, matrix_dim), dtype=dtype)
+    dcn_average_time_ms_list = []
+    ici_average_time_ms_list = []
 
     # DCN benchmark
     if dcn_size > 1:
