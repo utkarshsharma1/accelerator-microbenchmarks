@@ -74,7 +74,7 @@ def psum_benchmark(
     """
     mesh, _, _ = create_mesh(dcn_size, ici_size)
     matrix = jnp.ones((matrix_dim, matrix_dim), dtype=dtype)
-
+    dcn_average_time_ms_list = ici_average_time_ms_list = None
     # DCN benchmark
     if dcn_size > 1:
 
@@ -86,9 +86,8 @@ def psum_benchmark(
             matrix, jax.sharding.NamedSharding(mesh, P("dcn", None))
         )
         jitted_op = jax.jit(psum_dcn_op)
-        dcn_average_time_ms_list = []
         for _ in range(num_runs):
-            dcn_average_time_ms = simple_timeit(
+            dcn_average_time_ms_list = simple_timeit(
                 jitted_op,
                 sharded_matrix,
                 tries=num_runs,
@@ -134,13 +133,11 @@ def psum_benchmark_calculate_metrics(
     metadata = get_metrics_helper(params)
     metrics = {}
     matrix_size_gbyte = matrix_dim * matrix_dim * dtype.dtype.itemsize / 1e9
-    dcn_bandwidth_gbyte_s_list = ici_bandwidth_gbyte_s_list = None
     # Calculate metrics for DCN benchmark
     if dcn_size > 1 and dcn_average_time_ms_list is not None:
         # bandwidth is claculated as psum can be done via reduce_scatter +
         # all_gather so bandwidth is the sum of the two (formulas below)
         dcn_bandwidth_gbyte_s_list = [
-            (
                 matrix_size_gbyte
                 * (dcn_size - 1)
                 * 2
@@ -148,7 +145,6 @@ def psum_benchmark_calculate_metrics(
                 / dcn_size
                 / (dcn_average_time_ms / 1e3)
                 for dcn_average_time_ms in dcn_average_time_ms_list
-            )
         ]
         dcn_bandwidth_gbyte_s_statistics = MetricsStatistics(
             metrics_list=dcn_bandwidth_gbyte_s_list,
@@ -158,19 +154,19 @@ def psum_benchmark_calculate_metrics(
             f"psum_dcn: Matrix size: {matrix_dim}x{matrix_dim}, {dtype=}, "
             f"{matrix_size_gbyte=}, achieved_bandwidth_gbyte_s (median) = {dcn_bandwidth_gbyte_s_statistics.statistics['p50']}"
         )
+        metrics.update(dcn_bandwidth_gbyte_s_statistics.serialize_statistics())
+
     # Calculate metrics for ICI benchmark
     if ici_size > 1 and ici_average_time_ms_list is not None:
         # bandwidth is claculated as psum can be done via reduce_scatter +
         # all_gather so bandwidth is the sum of the two (formulas below)
         ici_bandwidth_gbyte_s_list = [
-            (
                 matrix_size_gbyte
                 * (ici_size - 1)
                 * 2
                 / ici_size
                 / (ici_average_time_ms / 1e3)
                 for ici_average_time_ms in ici_average_time_ms_list
-            )
         ]
         ici_bandwidth_gbyte_s_statistics = MetricsStatistics(
             metrics_list=ici_bandwidth_gbyte_s_list,
@@ -180,9 +176,8 @@ def psum_benchmark_calculate_metrics(
             f"psum_ici: Matrix size: {matrix_dim}x{matrix_dim}, {dtype=}, "
             f"{matrix_size_gbyte=}, achieved_bandwidth_gbyte_s (median) = {ici_bandwidth_gbyte_s_statistics.statistics['p50']}"
         )
-    # Gather the metrics to report.
-    metrics.update(ici_bandwidth_gbyte_s_statistics.serialize_statistics())
-    metrics.update(dcn_bandwidth_gbyte_s_statistics.serialize_statistics())
+        # Gather the metrics to report.
+        metrics.update(ici_bandwidth_gbyte_s_statistics.serialize_statistics())
     return metadata, metrics
 
 
@@ -210,6 +205,7 @@ def psum_scatter_benchmark(
     """
     mesh, _, _ = create_mesh(dcn_size, ici_size)
     matrix = jnp.ones((matrix_dim, matrix_dim), dtype=dtype)
+    dcn_average_time_ms_list = ici_average_time_ms_list = None
     # DCN benchmark
     if dcn_size > 1:
 
@@ -223,9 +219,9 @@ def psum_scatter_benchmark(
             matrix, jax.sharding.NamedSharding(mesh, P("dcn", None))
         )
         jitted_op = jax.jit(psum_scatter_dcn_op)
-        dcn_average_time_ms_list = []
+
         for _ in range(num_runs):
-            dcn_average_time_ms = simple_timeit(
+            dcn_average_time_ms_list = simple_timeit(
                 jitted_op,
                 sharded_matrix,
                 tries=num_runs,
@@ -278,14 +274,12 @@ def psum_scatter_benchmark_calculate_metrics(
         # each sharded matrix size is matrix_size_gbyte / dcn_size and then it needs
         # to use (dcn_size - 1) steps in a ring algorithm
         dcn_bandwidth_gbyte_s_list = [
-            (
                 matrix_size_gbyte
                 * (dcn_size - 1)
                 / dcn_size
                 / dcn_size
                 / (dcn_average_time_ms / 1e3)
                 for dcn_average_time_ms in dcn_average_time_ms_list
-            )
         ]
         dcn_bandwidth_gbyte_s_statistics = MetricsStatistics(
             metrics_list=dcn_bandwidth_gbyte_s_list,
@@ -295,19 +289,18 @@ def psum_scatter_benchmark_calculate_metrics(
             f"psum_scatter_dcn: Matrix size: {matrix_dim}x{matrix_dim}, {dtype=}, "
             f"{matrix_size_gbyte=}, achieved_bandwidth_gbyte_s (median) = {dcn_bandwidth_gbyte_s_statistics.statistics['p50']}"
         )
+        metrics.update(dcn_bandwidth_gbyte_s_statistics.serialize_statistics())
 
     # Calculate metrics for ICI benchmark
     if ici_size > 1 and ici_average_time_ms_list is not None:
         # each sharded matrix size is matrix_size_gbyte / ici_size and then it needs
         # to use (ici_size - 1) steps in a ring algorithm
         ici_bandwidth_gbyte_s_list = [
-            (
                 matrix_size_gbyte
                 * (ici_size - 1)
                 / ici_size
                 / (ici_average_time_ms / 1e3)
                 for ici_average_time_ms in ici_average_time_ms_list
-            )
         ]
         ici_bandwidth_gbyte_s_statistics = MetricsStatistics(
             metrics_list=ici_bandwidth_gbyte_s_list,
@@ -317,9 +310,8 @@ def psum_scatter_benchmark_calculate_metrics(
             f"psum_scatter_ici: Matrix size: {matrix_dim}x{matrix_dim}, {dtype=}, "
             f"{matrix_size_gbyte=}, achieved_bandwidth_gbyte_s (median) = {ici_bandwidth_gbyte_s_statistics.statistics['p50']}"
         )
-    # Gather the metrics to report.
-    metrics.update(ici_bandwidth_gbyte_s_statistics.serialize_statistics())
-    metrics.update(dcn_bandwidth_gbyte_s_statistics.serialize_statistics())
+        # Gather the metrics to report.
+        metrics.update(ici_bandwidth_gbyte_s_statistics.serialize_statistics())
     metrics = {key: value for key, value in metrics.items() if value is not None}
     return metadata, metrics
 
@@ -348,6 +340,7 @@ def all_gather_benchmark(
     """
     mesh, _, _ = create_mesh(dcn_size, ici_size)
     matrix = jnp.ones((matrix_dim, matrix_dim), dtype=dtype)
+    dcn_average_time_ms_list = ici_average_time_ms_list = None
 
     # DCN benchmark
     if dcn_size > 1:
@@ -362,9 +355,9 @@ def all_gather_benchmark(
             matrix, jax.sharding.NamedSharding(mesh, P("dcn", None))
         )
         jitted_op = jax.jit(all_gather_dcn_op)
-        dcn_average_time_ms_list = []
+
         for _ in range(num_runs):
-            dcn_average_time_ms = simple_timeit(
+            dcn_average_time_ms_list = simple_timeit(
                 jitted_op,
                 sharded_matrix,
                 tries=num_runs,
@@ -423,13 +416,11 @@ def all_gather_benchmark_calculate_metrics(
         # each sharded matrix size is matrix_size_gbyte / dcn_size and then it needs
         # to use (dcn_size - 1) steps in a ring algorithm
         dcn_bandwidth_gbyte_s_list = [
-            (
                 matrix_size_gbyte
                 * (dcn_size - 1)
                 / dcn_size
                 / (dcn_average_time_ms / 1e3)
                 for dcn_average_time_ms in dcn_average_time_ms_list
-            )
         ]
         dcn_bandwidth_gbyte_s_statistics = MetricsStatistics(
             metrics_list=dcn_bandwidth_gbyte_s_list,
@@ -439,16 +430,15 @@ def all_gather_benchmark_calculate_metrics(
             f"all_gather_dcn: Matrix size: {matrix_dim}x{matrix_dim}, {dtype=}, "
             f"{matrix_size_gbyte=}, achieved_bandwidth_gbyte_s (median) = {dcn_bandwidth_gbyte_s_statistics.statistics['p50']}"
         )
+        metrics.update(dcn_bandwidth_gbyte_s_statistics.serialize_statistics())
 
     # Calculate metrics for ICI benchmark
     if ici_size > 1 and ici_average_time_ms_list is not None:
         # each sharded matrix size is matrix_size_gbyte / ici_size and then it needs
         # to use (ici_size - 1) steps in a ring algorithm
         ici_bandwidth_gbyte_s_list = [
-            (
                 matrix_size_gbyte * (ici_size - 1) / (ici_average_time_ms / 1e3)
                 for ici_average_time_ms in ici_average_time_ms_list
-            )
         ]
         ici_bandwidth_gbyte_s_statistics = MetricsStatistics(
             metrics_list=ici_bandwidth_gbyte_s_list,
@@ -458,9 +448,8 @@ def all_gather_benchmark_calculate_metrics(
             f"all_gather_ici: Matrix size: {matrix_dim}x{matrix_dim}, {dtype=}, "
             f"{matrix_size_gbyte=}, achieved_bandwidth_gbyte_s (median) = {ici_bandwidth_gbyte_s_statistics.statistics['p50']}"
         )
-    # Gather the metrics to report.
-    metrics.update(ici_bandwidth_gbyte_s_statistics.serialize_statistics())
-    metrics.update(dcn_bandwidth_gbyte_s_statistics.serialize_statistics())
+        # Gather the metrics to report.
+        metrics.update(ici_bandwidth_gbyte_s_statistics.serialize_statistics())
     metrics = {key: value for key, value in metrics.items() if value is not None}
     return metadata, metrics
 
@@ -489,6 +478,7 @@ def ppermute_benchmark(
     """
     mesh, _, _ = create_mesh(dcn_size, ici_size)
     matrix = jnp.ones((matrix_dim, matrix_dim), dtype=dtype)
+    dcn_average_time_ms_list = ici_average_time_ms_list = None
 
     # DCN benchmark
     if dcn_size > 1:
@@ -504,9 +494,9 @@ def ppermute_benchmark(
             matrix, jax.sharding.NamedSharding(mesh, P("dcn", None))
         )
         jitted_op = jax.jit(ppermute_dcn_op)
-        dcn_average_time_ms_list = []
+
         for _ in range(num_runs):
-            dcn_average_time_ms = simple_timeit(
+            dcn_average_time_ms_list = simple_timeit(
                 jitted_op,
                 sharded_matrix,
                 tries=num_runs,
@@ -560,10 +550,8 @@ def ppermute_benchmark_calculate_metrics(
         # each sharded matrix size is matrix_size_gbyte / dcn_size and then it needs
         # to use 1 step
         dcn_bandwidth_gbyte_s_list = [
-            (
                 matrix_size_gbyte / dcn_size / (dcn_average_time_ms / 1e3)
                 for dcn_average_time_ms in dcn_average_time_ms_list
-            )
         ]
         dcn_bandwidth_gbyte_s_statistics = MetricsStatistics(
             metrics_list=dcn_bandwidth_gbyte_s_list,
@@ -573,6 +561,7 @@ def ppermute_benchmark_calculate_metrics(
             f"ppermute_dcn: Matrix size: {matrix_dim}x{matrix_dim}, {dtype=}, "
             f"{matrix_size_gbyte=}, achieved_bandwidth_gbyte_s (median) = {dcn_bandwidth_gbyte_s_statistics.statistics['p50']}"
         )
+        metrics.update(dcn_bandwidth_gbyte_s_statistics.serialize_statistics())
 
     # Calculate metrics for ICI benchmark
     if ici_size > 1 and ici_average_time_ms_list is not None:
@@ -590,9 +579,7 @@ def ppermute_benchmark_calculate_metrics(
             f"ppermute_ici: Matrix size: {matrix_dim}x{matrix_dim}, {dtype=}, "
             f"{matrix_size_gbyte=}, achieved_bandwidth_gbyte_s (median) = {ici_bandwidth_gbyte_s_statistics.statistics['p50']}"
         )
-
-    metrics.update(ici_bandwidth_gbyte_s_statistics.serialize_statistics())
-    metrics.update(dcn_bandwidth_gbyte_s_statistics.serialize_statistics())
+        metrics.update(ici_bandwidth_gbyte_s_statistics.serialize_statistics())
     return metadata, metrics
 
 
@@ -620,6 +607,7 @@ def all_to_all_benchmark(
     """
     mesh, _, _ = create_mesh(dcn_size, ici_size)
     matrix = jnp.ones((matrix_dim, matrix_dim), dtype=dtype)
+    dcn_average_time_ms_list = ici_average_time_ms_list = None
 
     # DCN benchmark
     if dcn_size > 1:
@@ -691,14 +679,12 @@ def all_to_all_benchmark_calculate_metrics(
     if dcn_size > 1 and dcn_average_time_ms_list is not None:
 
         dcn_bandwidth_gbyte_s_list = [
-            (
                 matrix_size_gbyte
                 * (dcn_size - 1)
                 / dcn_size
                 / dcn_size
                 / (dcn_average_time_ms / 1e3)
                 for dcn_average_time_ms in dcn_average_time_ms_list
-            )
         ]
         dcn_bandwidth_gbyte_s_statistics = MetricsStatistics(
             metrics_list=dcn_bandwidth_gbyte_s_list,
@@ -708,18 +694,17 @@ def all_to_all_benchmark_calculate_metrics(
             f"all_to_all_dcn: Matrix size: {matrix_dim}x{matrix_dim}, {dtype=}, "
             f"{matrix_size_gbyte=}, achieved_bandwidth_gbyte_s (median) = {dcn_bandwidth_gbyte_s_statistics.statistics['p50']}"
         )
+        metrics.update(dcn_bandwidth_gbyte_s_statistics.serialize_statistics())
 
     # Calculate metrics for ICI benchmark
     if ici_size > 1 and ici_average_time_ms_list is not None:
 
         ici_bandwidth_gbyte_s_list = [
-            (
                 matrix_size_gbyte
                 * (ici_size - 1)
                 / ici_size
                 / (ici_average_time_ms / 1e3)
                 for ici_average_time_ms in ici_average_time_ms_list
-            )
         ]
         ici_bandwidth_gbyte_s_statistics = MetricsStatistics(
             metrics_list=ici_bandwidth_gbyte_s_list,
@@ -729,8 +714,7 @@ def all_to_all_benchmark_calculate_metrics(
             f"all_to_all_ici: Matrix size: {matrix_dim}x{matrix_dim}, {dtype=}, "
             f"{matrix_size_gbyte=}, achieved_bandwidth_gbyte_s (median) = {ici_bandwidth_gbyte_s_statistics.statistics['p50']}"
         )
-    # Gather the metrics to report.
-    metrics.update(ici_bandwidth_gbyte_s_statistics.serialize_statistics())
-    metrics.update(dcn_bandwidth_gbyte_s_statistics.serialize_statistics())
+        # Gather the metrics to report.
+        metrics.update(ici_bandwidth_gbyte_s_statistics.serialize_statistics())
     metrics = {key: value for key, value in metrics.items() if value is not None}
     return metadata, metrics
