@@ -68,7 +68,7 @@ def get_metrics_helper(
     }
     metrics = {}
     time_ms_statistics = MetricsStatistics(
-        metrics_list=params["time_ms_list"], metrics_name="time_ms"
+        metrics_list=dict(params)["time_ms_list"], metrics_name="time_ms"
     )
     metrics.update(time_ms_statistics.serialize_statistics())
     return metadata, metrics
