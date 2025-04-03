@@ -72,7 +72,7 @@ def get_metrics_from_trace(trace: dict[str, Any], task: str) -> float:
     for e in events:
         run_id = e["args"]["run_id"] if "args" in e and "run_id" in e["args"] else "0"
         events_by_run_id[run_id].append(e)
-
+    durations_ms = []
     try:
         # Duration is in us.
         durations_ms = [

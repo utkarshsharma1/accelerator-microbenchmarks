@@ -138,7 +138,6 @@ def psum_benchmark_calculate_metrics(
         # bandwidth is claculated as psum can be done via reduce_scatter +
         # all_gather so bandwidth is the sum of the two (formulas below)
         dcn_bandwidth_gbyte_s_list = [
-            (
                 matrix_size_gbyte
                 * (dcn_size - 1)
                 * 2
@@ -146,7 +145,6 @@ def psum_benchmark_calculate_metrics(
                 / dcn_size
                 / (dcn_average_time_ms / 1e3)
                 for dcn_average_time_ms in dcn_average_time_ms_list
-            )
         ]
         dcn_bandwidth_gbyte_s_statistics = MetricsStatistics(
             metrics_list=dcn_bandwidth_gbyte_s_list,
@@ -163,14 +161,12 @@ def psum_benchmark_calculate_metrics(
         # bandwidth is claculated as psum can be done via reduce_scatter +
         # all_gather so bandwidth is the sum of the two (formulas below)
         ici_bandwidth_gbyte_s_list = [
-            (
                 matrix_size_gbyte
                 * (ici_size - 1)
                 * 2
                 / ici_size
                 / (ici_average_time_ms / 1e3)
                 for ici_average_time_ms in ici_average_time_ms_list
-            )
         ]
         ici_bandwidth_gbyte_s_statistics = MetricsStatistics(
             metrics_list=ici_bandwidth_gbyte_s_list,
@@ -278,14 +274,12 @@ def psum_scatter_benchmark_calculate_metrics(
         # each sharded matrix size is matrix_size_gbyte / dcn_size and then it needs
         # to use (dcn_size - 1) steps in a ring algorithm
         dcn_bandwidth_gbyte_s_list = [
-            (
                 matrix_size_gbyte
                 * (dcn_size - 1)
                 / dcn_size
                 / dcn_size
                 / (dcn_average_time_ms / 1e3)
                 for dcn_average_time_ms in dcn_average_time_ms_list
-            )
         ]
         dcn_bandwidth_gbyte_s_statistics = MetricsStatistics(
             metrics_list=dcn_bandwidth_gbyte_s_list,
@@ -302,13 +296,11 @@ def psum_scatter_benchmark_calculate_metrics(
         # each sharded matrix size is matrix_size_gbyte / ici_size and then it needs
         # to use (ici_size - 1) steps in a ring algorithm
         ici_bandwidth_gbyte_s_list = [
-            (
                 matrix_size_gbyte
                 * (ici_size - 1)
                 / ici_size
                 / (ici_average_time_ms / 1e3)
                 for ici_average_time_ms in ici_average_time_ms_list
-            )
         ]
         ici_bandwidth_gbyte_s_statistics = MetricsStatistics(
             metrics_list=ici_bandwidth_gbyte_s_list,
@@ -424,13 +416,11 @@ def all_gather_benchmark_calculate_metrics(
         # each sharded matrix size is matrix_size_gbyte / dcn_size and then it needs
         # to use (dcn_size - 1) steps in a ring algorithm
         dcn_bandwidth_gbyte_s_list = [
-            (
                 matrix_size_gbyte
                 * (dcn_size - 1)
                 / dcn_size
                 / (dcn_average_time_ms / 1e3)
                 for dcn_average_time_ms in dcn_average_time_ms_list
-            )
         ]
         dcn_bandwidth_gbyte_s_statistics = MetricsStatistics(
             metrics_list=dcn_bandwidth_gbyte_s_list,
@@ -447,10 +437,8 @@ def all_gather_benchmark_calculate_metrics(
         # each sharded matrix size is matrix_size_gbyte / ici_size and then it needs
         # to use (ici_size - 1) steps in a ring algorithm
         ici_bandwidth_gbyte_s_list = [
-            (
                 matrix_size_gbyte * (ici_size - 1) / (ici_average_time_ms / 1e3)
                 for ici_average_time_ms in ici_average_time_ms_list
-            )
         ]
         ici_bandwidth_gbyte_s_statistics = MetricsStatistics(
             metrics_list=ici_bandwidth_gbyte_s_list,
@@ -562,10 +550,8 @@ def ppermute_benchmark_calculate_metrics(
         # each sharded matrix size is matrix_size_gbyte / dcn_size and then it needs
         # to use 1 step
         dcn_bandwidth_gbyte_s_list = [
-            (
                 matrix_size_gbyte / dcn_size / (dcn_average_time_ms / 1e3)
                 for dcn_average_time_ms in dcn_average_time_ms_list
-            )
         ]
         dcn_bandwidth_gbyte_s_statistics = MetricsStatistics(
             metrics_list=dcn_bandwidth_gbyte_s_list,
@@ -693,14 +679,12 @@ def all_to_all_benchmark_calculate_metrics(
     if dcn_size > 1 and dcn_average_time_ms_list is not None:
 
         dcn_bandwidth_gbyte_s_list = [
-            (
                 matrix_size_gbyte
                 * (dcn_size - 1)
                 / dcn_size
                 / dcn_size
                 / (dcn_average_time_ms / 1e3)
                 for dcn_average_time_ms in dcn_average_time_ms_list
-            )
         ]
         dcn_bandwidth_gbyte_s_statistics = MetricsStatistics(
             metrics_list=dcn_bandwidth_gbyte_s_list,
@@ -716,13 +700,11 @@ def all_to_all_benchmark_calculate_metrics(
     if ici_size > 1 and ici_average_time_ms_list is not None:
 
         ici_bandwidth_gbyte_s_list = [
-            (
                 matrix_size_gbyte
                 * (ici_size - 1)
                 / ici_size
                 / (ici_average_time_ms / 1e3)
                 for ici_average_time_ms in ici_average_time_ms_list
-            )
         ]
         ici_bandwidth_gbyte_s_statistics = MetricsStatistics(
             metrics_list=ici_bandwidth_gbyte_s_list,
