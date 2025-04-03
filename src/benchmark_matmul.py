@@ -66,7 +66,9 @@ def get_metrics_helper(
     return metadata
 
 
-def naive_matmul(m: int, k: int, n: int, num_runs: int = 1) -> Dict[str, Any]:
+def naive_matmul(
+    m: int, k: int, n: int, num_runs: int = 1, trace_dir: str = None
+) -> Dict[str, Any]:
     """Benchmarks the jax.numpy.einsum."""
 
     def f(x, y):
@@ -93,15 +95,14 @@ def naive_matmul(m: int, k: int, n: int, num_runs: int = 1) -> Dict[str, Any]:
     jax.block_until_ready(output)  # Ensure full completion before printing metrics
     print(f"{lhs.shape=} x {rhs.shape=} = {output.shape=}, {output.dtype=}")
     # Run the benchmark
-    time_ms_list = []
-    for _ in range(num_runs):
-        average_time_ms = simple_timeit(
-            jit_sharded_f,
-            lhs,
-            rhs,
-            task="naive_matmul",
-        )
-        time_ms_list.append(average_time_ms)
+    time_ms_list = simple_timeit(
+        jit_sharded_f,
+        lhs,
+        rhs,
+        tries=num_runs,
+        task="naive_matmul",
+        trace_dir=trace_dir,
+    )
     return {"time_ms_list": time_ms_list}
 
 
@@ -153,7 +154,7 @@ def naive_matmul_calculate_metrics(
 
 
 def single_host_naive_matmul(
-    m: int, k: int, n: int, num_runs: int = 1
+    m: int, k: int, n: int, num_runs: int = 1, trace_dir: str = None
 ) -> Dict[str, Any]:
     """Benchmarks matmul on a single device without any sharding."""
 
@@ -169,15 +170,14 @@ def single_host_naive_matmul(
     jax.block_until_ready(output)
     print(f"{lhs.shape=} x {rhs.shape=} = {output.shape=}, {output.dtype=}")
     # Run the benchmark
-    time_ms_list = []
-    for _ in range(num_runs):
-        average_time_ms = simple_timeit(
-            jitted_f,
-            lhs,
-            rhs,
-            task="single_host_naive_matmul",
-        )
-        time_ms_list.append(average_time_ms)
+    time_ms_list = simple_timeit(
+        jitted_f,
+        lhs,
+        rhs,
+        tries=num_runs,
+        task="single_host_naive_matmul",
+        trace_dir=trace_dir,
+    )
     return {"time_ms_list": time_ms_list}
 
 
@@ -229,7 +229,7 @@ def single_host_naive_matmul_calculate_metrics(
 
 
 def collective_matmul_one_direction(
-    m: int, k: int, n: int, num_runs: int = 1
+    m: int, k: int, n: int, num_runs: int = 1, trace_dir: str = None
 ) -> Dict[str, Any]:
     """Benchmarks the collective matmul that does permute in one direction."""
 
@@ -283,12 +283,14 @@ def collective_matmul_one_direction(
     output = jit_sharded_f(lhs, rhs)
     jax.block_until_ready(output)  # Ensure full completion before printing metrics
     print(f"{lhs.shape=} x {rhs.shape=} = {output.shape=}, {output.dtype=}")
-    time_ms_list = []
-    for _ in range(num_runs):
-        average_time_ms = simple_timeit(
-            jit_sharded_f, lhs, rhs, task="collective_matmul_one_direction"
-        )
-        time_ms_list.append(average_time_ms)
+    time_ms_list = simple_timeit(
+        jit_sharded_f,
+        lhs,
+        rhs,
+        tries=num_runs,
+        task="collective_matmul_one_direction",
+        trace_dir=trace_dir,
+    )
     return {"time_ms_list": time_ms_list}
 
 
@@ -327,7 +329,7 @@ def collective_matmul_one_direction_calculate_metrics(
 
 
 def collective_matmul_two_directions(
-    m: int, k: int, n: int, num_runs: int = 1
+    m: int, k: int, n: int, num_runs: int = 1, trace_dir: str = None
 ) -> Dict[str, Any]:
     """Benchmarks the collective matmul that does permute in two directions."""
 
@@ -418,12 +420,14 @@ def collective_matmul_two_directions(
     jax.block_until_ready(output)  # Ensure full completion before printing metrics
     print(f"{lhs.shape=} x {rhs.shape=} = {output.shape=}, {output.dtype=}")
     # Run the benchmark.
-    time_ms_list = []
-    for _ in range(num_runs):
-        average_time_ms = simple_timeit(
-            jit_sharded_f, lhs, rhs, task="collective_matmul_two_directions"
-        )
-        time_ms_list.append(average_time_ms)
+    time_ms_list = simple_timeit(
+        jit_sharded_f,
+        lhs,
+        rhs,
+        tries=num_runs,
+        task="collective_matmul_two_directions",
+        trace_dir=trace_dir,
+    )
     return {"time_ms_list": time_ms_list}
 
 
@@ -462,7 +466,7 @@ def collective_matmul_two_directions_calculate_metrics(
 
 
 def multilayer_collective_matmul(
-    m: int, k: int, n: int, num_runs: int = 1
+    m: int, k: int, n: int, num_runs: int = 1, trace_dir: str = None
 ) -> Dict[str, Any]:
     """Benchmarks the multilayer collective matmul."""
 
@@ -498,12 +502,13 @@ def multilayer_collective_matmul(
     print(f"Activation shape: {activation.shape}")
     print("Weights shapes:", [w.shape for w in weights])
     print(f"Output shape: {output.shape}, Output dtype: {output.dtype}")
-    time_ms_list = []
-    for _ in range(num_runs):
-        average_time_ms = simple_timeit(
-            jit_sharded_f, activation, weights, task="collective_multilayer_matmul"
-        )
-        time_ms_list.append(average_time_ms)
+    time_ms_list = simple_timeit(
+        jit_sharded_f,
+        activation,
+        weights,
+        task="collective_multilayer_matmul",
+        trace_dir=trace_dir,
+    )
     return {"time_ms_list": time_ms_list}
 
 

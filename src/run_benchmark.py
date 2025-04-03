@@ -113,7 +113,7 @@ def get_benchmark_functions(
 
 
 def preprocess_benchmark_param(
-    benchmark_param: Dict[str, Any],
+    benchmark_param: Dict[str, Any], trace_dir: string = None
 ) -> Dict[str, Any]:
     """Preprocess the benchmark parameter before running the benchmark."""
     if "dtype" in benchmark_param:
@@ -134,6 +134,8 @@ def preprocess_benchmark_param(
                     f"Parameter {same_as_key} not found in the benchmark_param."
                 )
             benchmark_param[key] = benchmark_param[same_as_key]
+
+    benchmark_param["trace_dir"] = trace_dir
     return benchmark_param
 
 
@@ -220,7 +222,7 @@ def run_single_benchmark(benchmark_config: Dict[str, Any]):
     csv_path = benchmark_config.get("csv_path")
     trace_dir = benchmark_config.get("trace_dir")
     xlml_metrics_dir = benchmark_config.get("xlml_metrics_dir")
-    # TODO(qinyiyan): Add support for parsing xplane.
+
     if not benchmark_name:
         raise ValueError("Each benchmark must have a 'benchmark_name'.")
 
@@ -229,16 +231,12 @@ def run_single_benchmark(benchmark_config: Dict[str, Any]):
 
     print(f"\n{'=' * 30}Starting benchmark '{benchmark_name}'{'=' * 30}\n")
 
-    # Start a trace if requested
-    test_name = f"t_{benchmark_name}_" + "".join(
-        random.choices(string.ascii_uppercase + string.digits, k=10)
-    )
-    if trace_dir:
-        jax.profiler.start_trace(f"{trace_dir}/{test_name}")
     # Run the benchmark
     calculate_metrics_results = []
     for benchmark_param in benchmark_params:
-        benchmark_param = preprocess_benchmark_param(benchmark_param)
+        benchmark_param = preprocess_benchmark_param(
+            benchmark_param, trace_dir=trace_dir
+        )
         print(f"Running benchmark: {benchmark_name} with params: {benchmark_param}")
         test_start_time = (
             datetime.datetime.now(tz=datetime.timezone.utc).isoformat() + "Z"
@@ -257,7 +255,7 @@ def run_single_benchmark(benchmark_config: Dict[str, Any]):
             if key in calculate_metrics_params
         }
         # Filter out certain parameters from benchmark_param, eg. "num_runs".
-        benchmark_params_to_filter = ["num_runs"]
+        benchmark_params_to_filter = ["num_runs", "trace_dir"]
         filtered_benchmark_param = {
             key: value
             for key, value in benchmark_param.items()
@@ -277,12 +275,11 @@ def run_single_benchmark(benchmark_config: Dict[str, Any]):
                 test_end_time,
             )
 
-    # Dump results.
-    if trace_dir:
-        jax.profiler.stop_trace()
-        print(f"Trace saved to {trace_dir}/{test_name}")
-
+    # Dump metrics to file.
     if csv_path:
+        test_name = f"t_{benchmark_name}_" + "".join(
+            random.choices(string.ascii_uppercase + string.digits, k=10)
+        )
         write_to_csv(f"{csv_path}/{test_name}.csv", calculate_metrics_results)
 
 
@@ -343,7 +340,7 @@ def run_benchmark_multithreaded(benchmark_config):
 
     # Preprocess benchmark parameters
     preprocessed_benchmark_params = [
-        preprocess_benchmark_param(benchmark_param)
+        preprocess_benchmark_param(benchmark_param, trace_dir=None)
         for benchmark_param in benchmark_params
     ]
     calculate_metrics_results = []

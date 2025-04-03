@@ -82,6 +82,7 @@ def naive_attention_benchmark(
     causal: bool = True,
     scale: bool = False,
     num_runs: int = 1,
+    trace_dir: str = None,
 ) -> Dict[str, Any]:
     """Naive attention benchmark."""
 
@@ -112,18 +113,17 @@ def naive_attention_benchmark(
     jax.block_until_ready(output)
 
     # Run benchmark
-    time_ms_list = []
-    for _ in range(num_runs):
-        average_time_ms = simple_timeit(
-            naive_attention,
-            q,
-            k,
-            v,
-            causal,
-            scale,
-            task="naive_attention",
-        )
-        time_ms_list.append(average_time_ms)
+    time_ms_list = simple_timeit(
+        naive_attention,
+        q,
+        k,
+        v,
+        causal,
+        scale,
+        tries=num_runs,
+        task="naive_attention",
+        trace_dir=trace_dir,
+    )
     return {"time_ms_list": time_ms_list, "output": output}
 
 
@@ -151,6 +151,7 @@ def pallas_flash_attention_benchmark(
     num_heads: int,
     causal: bool = True,
     num_runs: int = 1,
+    trace_dir: str = None,
 ) -> Dict[str, Any]:
     """Benchmarks the Pallas flash attention kernel."""
 
@@ -167,17 +168,16 @@ def pallas_flash_attention_benchmark(
     jax.block_until_ready(output)
 
     # Run benchmark
-    time_ms_list = []
-    for _ in range(num_runs):
-        average_time_ms = simple_timeit(
-            pallas_attention,
-            q,
-            k,
-            v,
-            causal,
-            task="pallas_flash_attention",
-        )
-        time_ms_list.append(average_time_ms)
+    time_ms_list = simple_timeit(
+        pallas_attention,
+        q,
+        k,
+        v,
+        causal,
+        tries=num_runs,
+        task="pallas_flash_attention",
+        trace_dir=trace_dir,
+    )
     return {"time_ms_list": time_ms_list, "output": output}
 
 
@@ -204,6 +204,7 @@ def splash_attention_benchmark(
     num_heads: int,
     causal: bool = True,
     num_runs: int = 1,
+    trace_dir: str = None,
 ) -> Dict[str, Any]:
     """Benchmarks the Splash attention kernel."""
 
@@ -250,17 +251,16 @@ def splash_attention_benchmark(
     jax.block_until_ready(output)
 
     # Run benchmark
-    time_ms_list = []
-    for _ in range(num_runs):
-        average_time_ms = simple_timeit(
-            splash_attention,
-            q,
-            k,
-            v,
-            causal,
-            task="splash_attention",
-        )
-        time_ms_list.append(average_time_ms)
+    time_ms_list = simple_timeit(
+        splash_attention,
+        q,
+        k,
+        v,
+        causal,
+        tries=num_runs,
+        task="splash_attention",
+        trace_dir=trace_dir,
+    )
     return {"time_ms_list": time_ms_list, "output": output}
 
 
@@ -281,7 +281,12 @@ def splash_attention_benchmark_calculate_metrics(
 
 
 def flax_nnx_attention_benchmark(
-    batch: int, seq_len: int, d_model: int, num_heads: int, num_runs: int = 1
+    batch: int,
+    seq_len: int,
+    d_model: int,
+    num_heads: int,
+    num_runs: int = 1,
+    trace_dir: str = None,
 ) -> Dict[str, Any]:
     """Benchmarks the Flax nnx attention."""
 
@@ -303,16 +308,15 @@ def flax_nnx_attention_benchmark(
     jax.block_until_ready(output)
 
     # Run benchmark
-    time_ms_list = []
-    for _ in range(num_runs):
-        average_time_ms = simple_timeit(
-            flax_attention,
-            q,
-            k,
-            v,
-            task="flax_attention",
-        )
-        time_ms_list.append(average_time_ms)
+    time_ms_list = simple_timeit(
+        flax_attention,
+        q,
+        k,
+        v,
+        tries=num_runs,
+        task="flax_attention",
+        trace_dir=trace_dir,
+    )
     return {"time_ms_list": time_ms_list, "output": output}
 
 
@@ -332,7 +336,12 @@ def flax_nnx_attention_benchmark_calculate_metrics(
 
 
 def flax_linen_attention_benchmark(
-    batch: int, seq_len: int, d_model: int, num_heads: int, num_runs: int = 1
+    batch: int,
+    seq_len: int,
+    d_model: int,
+    num_heads: int,
+    num_runs: int = 1,
+    trace_dir: str = None,
 ) -> Dict[str, Any]:
     """Benchmarks the Flax linen attention."""
 
@@ -353,16 +362,15 @@ def flax_linen_attention_benchmark(
     jax.block_until_ready(output)
 
     # Run benchmark
-    time_ms_list = []
-    for _ in range(num_runs):
-        average_time_ms = simple_timeit(
-            flax_attention,
-            q,
-            k,
-            v,
-            task="flax_attention",
-        )
-        time_ms_list.append(average_time_ms)
+    time_ms_list = simple_timeit(
+        flax_attention,
+        q,
+        k,
+        v,
+        tries=num_runs,
+        task="flax_attention",
+        trace_dir=trace_dir,
+    )
     return {"time_ms_list": time_ms_list, "output": output}
 
 
@@ -388,6 +396,7 @@ def keras_attention_benchmark(
     num_heads: int,
     causal: bool = False,
     num_runs: int = 1,
+    trace_dir: str = None,
 ) -> Dict[str, Any]:
     """Benchmarks the Flax linen attention."""
 
@@ -417,17 +426,16 @@ def keras_attention_benchmark(
     jax.block_until_ready(output)
 
     # Run benchmark
-    time_ms_list = []
-    for _ in range(num_runs):
-        average_time_ms = simple_timeit(
-            keras_attention,
-            q,
-            k,
-            v,
-            causal,
-            task="keras_attention",
-        )
-        time_ms_list.append(average_time_ms)
+    time_ms_list = simple_timeit(
+        keras_attention,
+        q,
+        k,
+        v,
+        causal,
+        tries=num_runs,
+        task="keras_attention",
+        trace_dir=trace_dir,
+    )
     return {"time_ms_list": time_ms_list, "output": output}
 
 
