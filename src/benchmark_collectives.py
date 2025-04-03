@@ -74,8 +74,7 @@ def psum_benchmark(
     """
     mesh, _, _ = create_mesh(dcn_size, ici_size)
     matrix = jnp.ones((matrix_dim, matrix_dim), dtype=dtype)
-    dcn_average_time_ms_list = []
-    ici_average_time_ms_list = []
+    dcn_average_time_ms_list = ici_average_time_ms_list = None
     # DCN benchmark
     if dcn_size > 1:
 
@@ -210,8 +209,7 @@ def psum_scatter_benchmark(
     """
     mesh, _, _ = create_mesh(dcn_size, ici_size)
     matrix = jnp.ones((matrix_dim, matrix_dim), dtype=dtype)
-    dcn_average_time_ms_list = []
-    ici_average_time_ms_list = []
+    dcn_average_time_ms_list = ici_average_time_ms_list = None
     # DCN benchmark
     if dcn_size > 1:
 
@@ -274,6 +272,7 @@ def psum_scatter_benchmark_calculate_metrics(
     metadata = get_metrics_helper(params)
     metrics = {}
     matrix_size_gbyte = matrix_dim * matrix_dim * dtype.dtype.itemsize / 1e9
+    dcn_bandwidth_gbyte_s_list = ici_bandwidth_gbyte_s_list = None
     # Calculate metrics for DCN benchmark
     if dcn_size > 1 and dcn_average_time_ms_list is not None:
 
@@ -350,8 +349,7 @@ def all_gather_benchmark(
     """
     mesh, _, _ = create_mesh(dcn_size, ici_size)
     matrix = jnp.ones((matrix_dim, matrix_dim), dtype=dtype)
-    dcn_average_time_ms_list = []
-    ici_average_time_ms_list = []
+    dcn_average_time_ms_list = ici_average_time_ms_list = None
 
     # DCN benchmark
     if dcn_size > 1:
@@ -421,6 +419,7 @@ def all_gather_benchmark_calculate_metrics(
     metadata = get_metrics_helper(params)
     metrics = {}
     matrix_size_gbyte = matrix_dim * matrix_dim * dtype.dtype.itemsize / 1e9
+    dcn_bandwidth_gbyte_s_list = ici_bandwidth_gbyte_s_list = None
     # Calculate metrics for DCN benchmark
     if dcn_size > 1 and dcn_average_time_ms_list is not None:
 
@@ -493,8 +492,7 @@ def ppermute_benchmark(
     """
     mesh, _, _ = create_mesh(dcn_size, ici_size)
     matrix = jnp.ones((matrix_dim, matrix_dim), dtype=dtype)
-    dcn_average_time_ms_list = []
-    ici_average_time_ms_list = []
+    dcn_average_time_ms_list = ici_average_time_ms_list = None
 
     # DCN benchmark
     if dcn_size > 1:
@@ -560,6 +558,7 @@ def ppermute_benchmark_calculate_metrics(
     metadata = get_metrics_helper(params)
     metrics = {}
     matrix_size_gbyte = matrix_dim * matrix_dim * dtype.dtype.itemsize / 1e9
+    dcn_bandwidth_gbyte_s_list = ici_bandwidth_gbyte_s_list = None
     # Calculate metrics for DCN benchmark
     if dcn_size > 1 and dcn_average_time_ms_list is not None:
 
@@ -626,8 +625,7 @@ def all_to_all_benchmark(
     """
     mesh, _, _ = create_mesh(dcn_size, ici_size)
     matrix = jnp.ones((matrix_dim, matrix_dim), dtype=dtype)
-    dcn_average_time_ms_list = []
-    ici_average_time_ms_list = []
+    dcn_average_time_ms_list = ici_average_time_ms_list = None
 
     # DCN benchmark
     if dcn_size > 1:
@@ -695,6 +693,7 @@ def all_to_all_benchmark_calculate_metrics(
     metadata = get_metrics_helper(params)
     metrics = {}
     matrix_size_gbyte = matrix_dim * matrix_dim * dtype.dtype.itemsize / 1e9
+    dcn_bandwidth_gbyte_s_list = ici_bandwidth_gbyte_s_list = None
     # Calculate metrics for DCN benchmark
     if dcn_size > 1 and dcn_average_time_ms_list is not None:
 
