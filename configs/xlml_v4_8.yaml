@@ -100,9 +100,3 @@ benchmarks:
   benchmark_sweep_params:
   - {input_size: 256, kernel_size: 3, padding_mode: "valid"}
   xlml_metrics_dir: "/tmp/microbenchmarks/outputs"
-- benchmark_name: "lax_conv_general_dilated"
-  benchmark_sweep_params:
-  - {batch_size: 32, input_h: 1024, input_w: 1024, kernel_h: 255, kernel_w: 255, in_channel: 16, out_channel: 16, padding_mode: "valid", stride: 1, dilation: 1, dtype: "bfloat16"}
-  - {batch_size: 16, input_h: 128, input_w: 128, kernel_h: 63, kernel_w: 63, in_channel: 16, out_channel: 16, padding_mode: "valid", stride: 1, dilation: 1, dtype: "bfloat16"}
-  csv_path: "/tmp/microbenchmarks/convolution"
-  xlml_metrics_dir: "/tmp/microbenchmarks/outputs"
