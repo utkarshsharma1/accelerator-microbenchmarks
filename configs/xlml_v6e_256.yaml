@@ -35,10 +35,6 @@ benchmarks:
   benchmark_sweep_params:
   - {m_range: {start: 1024, end: 32768, increase_by: 1024}, k: "SAME_AS_m", n: "SAME_AS_m"}
   xlml_metrics_dir: "/tmp/microbenchmarks/outputs"
-- benchmark_name: "collective_matmul_two_directions"
-  benchmark_sweep_params:
-  - {m_range: {start: 1024, end: 32768, increase_by: 1024}, k: "SAME_AS_m", n: "SAME_AS_m"}
-  xlml_metrics_dir: "/tmp/microbenchmarks/outputs"
 - benchmark_name: "naive_attention"
   benchmark_sweep_params:
   - {batch_range: {start: 1, end: 32, multiplier: 2}, seq_len: 512, d_model: 1024, num_heads: 1, causal: true, scale: false}
