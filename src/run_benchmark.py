@@ -13,8 +13,7 @@ import itertools
 import random
 import string
 from typing import Any, Callable, Dict, List, Tuple
-from benchmark_utils import maybe_write_metrics_file
-from hlo_helper import rename_xla_dump
+from benchmark_utils import maybe_write_metrics_file, rename_xla_dump
 import jax
 import yaml
 import ray
@@ -72,6 +71,10 @@ dtype_mapping = {
     "int32": jax.numpy.int32,
     # Add other dtypes as needed
 }
+
+# Always dump HLOs
+TMP_XLA_DUMP_DIR = "/tmp/microbenchmarks/hlo_graphs"
+os.environ["XLA_FLAGS"] = f"--xla_dump_to={TMP_XLA_DUMP_DIR}"
 
 
 def get_benchmark_config(config_path: str) -> Dict[str, Any]:
@@ -226,8 +229,6 @@ def run_single_benchmark(benchmark_config: Dict[str, Any]):
     xlml_metrics_dir = benchmark_config.get("xlml_metrics_dir")
     xla_dump_dir = benchmark_config.get("xla_dump_dir")
 
-    if xla_dump_dir: 
-        os.environ["XLA_FLAGS"] = f"--xla_dump_to={xla_dump_dir}"
 
     if not benchmark_name:
         raise ValueError("Each benchmark must have a 'benchmark_name'.")
@@ -282,7 +283,7 @@ def run_single_benchmark(benchmark_config: Dict[str, Any]):
             )
         # Post process the xla dump
         if xla_dump_dir:
-            rename_xla_dump(xla_dump_dir=xla_dump_dir, benchmark_name=benchmark_name, benchmark_param=filtered_benchmark_param)
+            rename_xla_dump(tmp_xla_dump_dir=TMP_XLA_DUMP_DIR, dest_xla_dump_dir=xla_dump_dir, benchmark_name=benchmark_name, benchmark_param=filtered_benchmark_param)
 
 
     # Dump metrics to file.
@@ -291,9 +292,6 @@ def run_single_benchmark(benchmark_config: Dict[str, Any]):
             random.choices(string.ascii_uppercase + string.digits, k=10)
         )
         write_to_csv(f"{csv_path}/{test_name}.csv", calculate_metrics_results)
-
-    if not xla_dump_dir: 
-        os.environ["XLA_FLAGS"] = ""
 
     
 
