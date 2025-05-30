@@ -229,7 +229,6 @@ def run_single_benchmark(benchmark_config: Dict[str, Any]):
     xlml_metrics_dir = benchmark_config.get("xlml_metrics_dir")
     xla_dump_dir = benchmark_config.get("xla_dump_dir")
 
-
     if not benchmark_name:
         raise ValueError("Each benchmark must have a 'benchmark_name'.")
 
@@ -283,8 +282,12 @@ def run_single_benchmark(benchmark_config: Dict[str, Any]):
             )
         # Post process the xla dump
         if xla_dump_dir:
-            rename_xla_dump(tmp_xla_dump_dir=TMP_XLA_DUMP_DIR, dest_xla_dump_dir=xla_dump_dir, benchmark_name=benchmark_name, benchmark_param=filtered_benchmark_param)
-
+            rename_xla_dump(
+                tmp_xla_dump_dir=TMP_XLA_DUMP_DIR,
+                dest_xla_dump_dir=xla_dump_dir,
+                benchmark_name=benchmark_name,
+                benchmark_param=filtered_benchmark_param,
+            )
 
     # Dump metrics to file.
     if csv_path:
@@ -292,9 +295,6 @@ def run_single_benchmark(benchmark_config: Dict[str, Any]):
             random.choices(string.ascii_uppercase + string.digits, k=10)
         )
         write_to_csv(f"{csv_path}/{test_name}.csv", calculate_metrics_results)
-
-    
-
 
 
 def main(config_path: str, multithreaded: bool):

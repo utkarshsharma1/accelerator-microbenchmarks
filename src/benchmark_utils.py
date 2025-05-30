@@ -218,20 +218,28 @@ class MetricsStatistics:
         return serialized
 
 
-
-def rename_xla_dump(tmp_xla_dump_dir: str, dest_xla_dump_dir: str, benchmark_name:str , benchmark_param: Dict[str, Any]):
+def rename_xla_dump(
+    tmp_xla_dump_dir: str,
+    dest_xla_dump_dir: str,
+    benchmark_name: str,
+    benchmark_param: Dict[str, Any],
+):
     """
     Finds the latest XLA dump file matching '*jit_f*before_optimizations*.txt',
     then identifies all other files that share the same 'jit_f.[unique_id]' identifier
     and renames them to 'benchmark_name_serialized_params.original_suffix_with_extension'.
     """
 
-    serialized_benchmark_param = '_'.join(f'{key}_{value}' for key, value in benchmark_param.items())
-    anchor_pattern = os.path.join(tmp_xla_dump_dir, '*jit_f*before_optimizations*.txt')
+    serialized_benchmark_param = "_".join(
+        f"{key}_{value}" for key, value in benchmark_param.items()
+    )
+    anchor_pattern = os.path.join(tmp_xla_dump_dir, "*jit_f*before_optimizations*.txt")
     matching_anchor_files = glob.glob(anchor_pattern)
 
     if not matching_anchor_files:
-        print(f"No files found for anchor pattern: '{anchor_pattern}'. No files will be renamed.")
+        print(
+            f"No files found for anchor pattern: '{anchor_pattern}'. No files will be renamed."
+        )
         return
 
     # Sort anchor files by modification time (latest first)
@@ -243,43 +251,55 @@ def rename_xla_dump(tmp_xla_dump_dir: str, dest_xla_dump_dir: str, benchmark_nam
     # Example: 'module_0080.jit_f.cl_747713181.before_optimizations.txt'
     # This will extract 'jit_f.cl_747713181'
     filename_base = os.path.basename(latest_anchor_file)
-    jit_id_match = re.search(r'(jit_f\.[^.]+)', filename_base)
+    jit_id_match = re.search(r"(jit_f\.[^.]+)", filename_base)
 
     if not jit_id_match:
-        print(f"Could not extract 'jit_f.[unique_id]' from '{filename_base}'. Cannot proceed with renaming.")
+        print(
+            f"Could not extract 'jit_f.[unique_id]' from '{filename_base}'. Cannot proceed with renaming."
+        )
         return
 
     common_jit_id_prefix = jit_id_match.group(1)
 
     # Find all files in the directory that contain this specific common_jit_id_prefix
-    all_related_files_pattern = os.path.join(tmp_xla_dump_dir, f'*{common_jit_id_prefix}*')
+    all_related_files_pattern = os.path.join(
+        tmp_xla_dump_dir, f"*{common_jit_id_prefix}*"
+    )
     all_related_files = glob.glob(all_related_files_pattern)
 
     if not all_related_files:
-        print(f"No files found containing '{common_jit_id_prefix}'. This is unexpected if an anchor was found.")
+        print(
+            f"No files found containing '{common_jit_id_prefix}'. This is unexpected if an anchor was found."
+        )
         return
 
     new_base_name = f"{benchmark_name}_{serialized_benchmark_param}"
 
     for original_filepath in all_related_files:
         original_filename = os.path.basename(original_filepath)
-        
+
         # Find the specific suffix part *after* the common_jit_id_prefix.
         # This regex looks for the common_jit_id_prefix, then captures everything after it,
         # ensuring it starts with a dot if there's more.
         # Example: if original_filename is 'module_0080.jit_f.cl_747713181.after_codegen.txt'
         # and common_jit_id_prefix is 'jit_f.cl_747713181'
         # we want to capture '.after_codegen.txt'
-        suffix_match = re.search(re.escape(common_jit_id_prefix) + r'(\..*)', original_filename)
-        
+        suffix_match = re.search(
+            re.escape(common_jit_id_prefix) + r"(\..*)", original_filename
+        )
+
         if suffix_match:
-            original_suffix_with_extension = suffix_match.group(1) # e.g., '.after_codegen.txt'
+            original_suffix_with_extension = suffix_match.group(
+                1
+            )  # e.g., '.after_codegen.txt'
 
         new_filename = f"{new_base_name}{original_suffix_with_extension}"
         new_filepath = os.path.join(dest_xla_dump_dir, new_filename)
 
         if original_filepath == new_filepath:
-            print(f"Skipping: '{original_filename}' already has the desired name or path.")
+            print(
+                f"Skipping: '{original_filename}' already has the desired name or path."
+            )
             continue
 
         # Copy the renamed files to desired location
@@ -288,7 +308,9 @@ def rename_xla_dump(tmp_xla_dump_dir: str, dest_xla_dump_dir: str, benchmark_nam
                 os.makedirs(dest_xla_dump_dir, exist_ok=True)
                 shutil.copy(original_filepath, new_filepath)
             except Exception as e:
-                print(f"An unexpected error occurred while copy '{original_filepath}': {e}")
+                print(
+                    f"An unexpected error occurred while copy '{original_filepath}': {e}"
+                )
         else:
             upload_to_storage(trace_dir=new_filepath, local_file=original_filepath)
     print(f"The XLA dump is stored in {dest_xla_dump_dir}")
