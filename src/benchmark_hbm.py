@@ -29,12 +29,12 @@ def single_chip_hbm_copy(
 ) -> Dict[str, Any]:
     """Benchmarks HBM with copy(read and write) on a single device."""
 
-    def copy(a):
+    def f(a):
         return a.copy()
 
     a = jax.random.normal(jax.random.key(0), (num_elements,)).astype(dtype)
 
-    jitted_f = jax.jit(copy)
+    jitted_f = jax.jit(f)
     # Run once
     output = jitted_f(a)
     jax.block_until_ready(output)

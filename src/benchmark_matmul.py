@@ -233,7 +233,7 @@ def collective_matmul_one_direction(
 ) -> Dict[str, Any]:
     """Benchmarks the collective matmul that does permute in one direction."""
 
-    def collective_matmul(lhs, rhs):
+    def f(lhs, rhs):
         # lhs is the looped operand; rhs is the local operand
         axis_size = jax.lax.psum(1, axis_name="i")
         axis_index = jax.lax.axis_index(axis_name="i")
@@ -272,7 +272,7 @@ def collective_matmul_one_direction(
     rhs = jax.device_put(rhs, NamedSharding(mesh, P(None, None)))
     jit_sharded_f = jax.jit(
         shard_map(
-            collective_matmul,
+            f,
             mesh,
             in_specs=(P("i", None), P(None)),
             out_specs=P(None),
@@ -333,7 +333,7 @@ def collective_matmul_two_directions(
 ) -> Dict[str, Any]:
     """Benchmarks the collective matmul that does permute in two directions."""
 
-    def collective_matmul(activations, weights):
+    def f(activations, weights):
         """Collective matrix multiply."""
         axis_size = jax.lax.psum(1, axis_name="i")
         axis_index = jax.lax.axis_index(axis_name="i")
@@ -408,7 +408,7 @@ def collective_matmul_two_directions(
     rhs = jax.device_put(rhs, NamedSharding(mesh, P(None, None)))
     jit_sharded_f = jax.jit(
         shard_map(
-            collective_matmul,
+            f,
             mesh,
             in_specs=(P("i", None), P(None)),
             out_specs=P(None),
