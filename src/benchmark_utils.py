@@ -16,6 +16,7 @@ import json
 import re
 from collections import defaultdict
 import subprocess
+import shutil
 
 
 def simple_timeit(f, *args, tries=10, task=None, trace_dir=None) -> float:
@@ -281,20 +282,13 @@ def rename_xla_dump(tmp_xla_dump_dir: str, dest_xla_dump_dir: str, benchmark_nam
             print(f"Skipping: '{original_filename}' already has the desired name or path.")
             continue
 
-        try:
-            os.copy(original_filepath, new_filepath)
-        except OSError as e:
-            print(f"Error renaming file '{original_filepath}' to '{new_filepath}': {e}")
-        except Exception as e:
-            print(f"An unexpected error occurred while renaming '{original_filepath}': {e}")
-        
         # Copy the renamed files to desired location
         if is_local_directory_path(dest_xla_dump_dir):
             try:
-                os.copy(original_filepath, new_filepath)
-            except OSError as e:
-                print(f"Error copy file '{original_filepath}' to '{new_filepath}': {e}")
+                os.makedirs(dest_xla_dump_dir, exist_ok=True)
+                shutil.copy(original_filepath, new_filepath)
             except Exception as e:
-                print(f"An unexpected error occurred while renaming '{original_filepath}': {e}")
+                print(f"An unexpected error occurred while copy '{original_filepath}': {e}")
         else:
             upload_to_storage(trace_dir=new_filepath, local_file=original_filepath)
+    print(f"The XLA dump is stored in {dest_xla_dump_dir}")
