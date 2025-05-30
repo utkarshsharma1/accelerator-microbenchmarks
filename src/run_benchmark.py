@@ -14,10 +14,12 @@ import random
 import string
 from typing import Any, Callable, Dict, List, Tuple
 from benchmark_utils import maybe_write_metrics_file
+from hlo_helper import rename_xla_dump
 import jax
 import yaml
 import ray
 from concurrent.futures import ThreadPoolExecutor
+import os
 
 COLLECTIVE_BENCHMARK_MAP = {
     "all_gather": "benchmark_collectives.all_gather_benchmark",
@@ -222,6 +224,10 @@ def run_single_benchmark(benchmark_config: Dict[str, Any]):
     csv_path = benchmark_config.get("csv_path")
     trace_dir = benchmark_config.get("trace_dir")
     xlml_metrics_dir = benchmark_config.get("xlml_metrics_dir")
+    xla_dump_dir = benchmark_config.get("xla_dump_dir")
+
+    if xla_dump_dir: 
+        os.environ["XLA_FLAGS"] = f"--xla_dump_to={xla_dump_dir}"
 
     if not benchmark_name:
         raise ValueError("Each benchmark must have a 'benchmark_name'.")
@@ -274,6 +280,10 @@ def run_single_benchmark(benchmark_config: Dict[str, Any]):
                 test_start_time,
                 test_end_time,
             )
+        # Post process the xla dump
+        if xla_dump_dir:
+            rename_xla_dump(xla_dump_dir=xla_dump_dir, benchmark_name=benchmark_name, benchmark_param=filtered_benchmark_param)
+
 
     # Dump metrics to file.
     if csv_path:
@@ -281,6 +291,12 @@ def run_single_benchmark(benchmark_config: Dict[str, Any]):
             random.choices(string.ascii_uppercase + string.digits, k=10)
         )
         write_to_csv(f"{csv_path}/{test_name}.csv", calculate_metrics_results)
+
+    if not xla_dump_dir: 
+        os.environ["XLA_FLAGS"] = ""
+
+    
+
 
 
 def main(config_path: str, multithreaded: bool):
