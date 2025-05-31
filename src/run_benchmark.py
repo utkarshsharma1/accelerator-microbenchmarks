@@ -19,6 +19,8 @@ import yaml
 import ray
 from concurrent.futures import ThreadPoolExecutor
 import os
+import copy
+
 
 COLLECTIVE_BENCHMARK_MAP = {
     "all_gather": "benchmark_collectives.all_gather_benchmark",
@@ -240,6 +242,7 @@ def run_single_benchmark(benchmark_config: Dict[str, Any]):
     # Run the benchmark
     calculate_metrics_results = []
     for benchmark_param in benchmark_params:
+        original_benchmark_param = copy.deepcopy(benchmark_param)
         benchmark_param = preprocess_benchmark_param(
             benchmark_param, trace_dir=trace_dir
         )
@@ -286,7 +289,7 @@ def run_single_benchmark(benchmark_config: Dict[str, Any]):
                 tmp_xla_dump_dir=TMP_XLA_DUMP_DIR,
                 dest_xla_dump_dir=xla_dump_dir,
                 benchmark_name=benchmark_name,
-                benchmark_param=filtered_benchmark_param,
+                benchmark_param=original_benchmark_param,
             )
 
     # Dump metrics to file.
@@ -304,6 +307,13 @@ def main(config_path: str, multithreaded: bool):
     benchmarks = config.get("benchmarks")
     if not benchmarks or not isinstance(benchmarks, list):
         raise ValueError("Configuration must contain a 'benchmarks' list.")
+
+    # Clear the tmp dirs.
+    if os.path.exists(TMP_XLA_DUMP_DIR):
+        for filename in os.listdir(TMP_XLA_DUMP_DIR):
+            file_path = os.path.join(TMP_XLA_DUMP_DIR, filename)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
 
     if multithreaded:
         ray.init(

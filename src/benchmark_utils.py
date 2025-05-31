@@ -246,12 +246,10 @@ def rename_xla_dump(
     matching_anchor_files.sort(key=os.path.getmtime, reverse=True)
     latest_anchor_file = matching_anchor_files[0]
 
-    # Extract the common 'jit_f.[unique_id]' part from the anchor file.
-    # This regex captures from 'jit_f.' up to the next '.' (before the specific suffix like '.before_optimizations')
     # Example: 'module_0080.jit_f.cl_747713181.before_optimizations.txt'
-    # This will extract 'jit_f.cl_747713181'
+    # This will extract 'module_0080.jit_f.cl_747713181'
     filename_base = os.path.basename(latest_anchor_file)
-    jit_id_match = re.search(r"(jit_f\.[^.]+)", filename_base)
+    jit_id_match = re.search(r"(module.*jit_f\.[^.]+)", filename_base)
 
     if not jit_id_match:
         print(

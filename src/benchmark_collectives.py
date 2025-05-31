@@ -79,13 +79,13 @@ def psum_benchmark(
     if dcn_size > 1:
 
         @partial(shard_map, mesh=mesh, in_specs=P("dcn", None), out_specs=P(None))
-        def psum_dcn_op(x):
+        def f(x):
             return jax.lax.psum(x, "dcn")
 
         sharded_matrix = jax.device_put(
             matrix, jax.sharding.NamedSharding(mesh, P("dcn", None))
         )
-        jitted_op = jax.jit(psum_dcn_op)
+        jitted_op = jax.jit(f)
         for _ in range(num_runs):
             dcn_average_time_ms_list = simple_timeit(
                 jitted_op,
@@ -99,13 +99,13 @@ def psum_benchmark(
     if ici_size > 1:
 
         @partial(shard_map, mesh=mesh, in_specs=P(None, None), out_specs=P(None, None))
-        def psum_ici_op(x):
+        def f(x):
             return jax.lax.psum(x, "ici")
 
         sharded_matrix = jax.device_put(
             matrix, jax.sharding.NamedSharding(mesh, P(None, None))
         )
-        jitted_op = jax.jit(psum_ici_op)
+        jitted_op = jax.jit(f)
         ici_average_time_ms_list = simple_timeit(
             jitted_op,
             sharded_matrix,
@@ -212,13 +212,13 @@ def psum_scatter_benchmark(
         @partial(
             shard_map, mesh=mesh, in_specs=P("dcn", None), out_specs=P("dcn", None)
         )
-        def psum_scatter_dcn_op(x):
+        def f(x):
             return jax.lax.psum_scatter(x, "dcn", tiled=True)
 
         sharded_matrix = jax.device_put(
             matrix, jax.sharding.NamedSharding(mesh, P("dcn", None))
         )
-        jitted_op = jax.jit(psum_scatter_dcn_op)
+        jitted_op = jax.jit(f)
 
         for _ in range(num_runs):
             dcn_average_time_ms_list = simple_timeit(
@@ -233,13 +233,13 @@ def psum_scatter_benchmark(
     if ici_size > 1:
 
         @partial(shard_map, mesh=mesh, in_specs=P(None, None), out_specs=P(None, "ici"))
-        def psum_scatter_ici_op(x):
+        def f(x):
             return jax.lax.psum_scatter(x, "ici", tiled=True)
 
         sharded_matrix = jax.device_put(
             matrix, jax.sharding.NamedSharding(mesh, P(None, None))
         )
-        jitted_op = jax.jit(psum_scatter_ici_op)
+        jitted_op = jax.jit(f)
         ici_average_time_ms_list = simple_timeit(
             jitted_op,
             sharded_matrix,
@@ -348,13 +348,13 @@ def all_gather_benchmark(
         @partial(
             shard_map, mesh=mesh, in_specs=P("dcn", None), out_specs=P("dcn", None)
         )
-        def all_gather_dcn_op(x):
+        def f(x):
             return jax.lax.all_gather(x, "dcn", tiled=True)
 
         sharded_matrix = jax.device_put(
             matrix, jax.sharding.NamedSharding(mesh, P("dcn", None))
         )
-        jitted_op = jax.jit(all_gather_dcn_op)
+        jitted_op = jax.jit(f)
 
         for _ in range(num_runs):
             dcn_average_time_ms_list = simple_timeit(
@@ -375,13 +375,13 @@ def all_gather_benchmark(
             out_specs=P(None, None),
             check_rep=False,
         )
-        def all_gather_ici_op(x):
+        def f(x):
             return jax.lax.all_gather(x, "ici", tiled=True)
 
         sharded_matrix = jax.device_put(
             matrix, jax.sharding.NamedSharding(mesh, P(None, None))
         )
-        jitted_op = jax.jit(all_gather_ici_op)
+        jitted_op = jax.jit(f)
         ici_average_time_ms_list = simple_timeit(
             jitted_op,
             sharded_matrix,
@@ -486,14 +486,14 @@ def ppermute_benchmark(
         @partial(
             shard_map, mesh=mesh, in_specs=P("dcn", None), out_specs=P("dcn", None)
         )
-        def ppermute_dcn_op(x):
+        def f(x):
             perm = [(i, (i + 1) % dcn_size) for i in range(dcn_size)]
             return jax.lax.ppermute(x, "dcn", perm)
 
         sharded_matrix = jax.device_put(
             matrix, jax.sharding.NamedSharding(mesh, P("dcn", None))
         )
-        jitted_op = jax.jit(ppermute_dcn_op)
+        jitted_op = jax.jit(f)
 
         for _ in range(num_runs):
             dcn_average_time_ms_list = simple_timeit(
@@ -508,14 +508,14 @@ def ppermute_benchmark(
     if ici_size > 1:
 
         @partial(shard_map, mesh=mesh, in_specs=P(None, None), out_specs=P(None, "ici"))
-        def ppermute_ici_op(x):
+        def f(x):
             perm = [(i, (i + 1) % ici_size) for i in range(ici_size)]
             return jax.lax.ppermute(x, "ici", perm)
 
         sharded_matrix = jax.device_put(
             matrix, jax.sharding.NamedSharding(mesh, P(None, None))
         )
-        jitted_op = jax.jit(ppermute_ici_op)
+        jitted_op = jax.jit(f)
         ici_average_time_ms_list = simple_timeit(
             jitted_op,
             sharded_matrix,
@@ -615,13 +615,13 @@ def all_to_all_benchmark(
         @partial(
             shard_map, mesh=mesh, in_specs=P("dcn", None), out_specs=P("dcn", None)
         )
-        def all_to_all_dcn_op(x):
+        def f(x):
             return jax.lax.all_to_all(x, "dcn", split_axis=0, concat_axis=0, tiled=True)
 
         sharded_matrix = jax.device_put(
             matrix, jax.sharding.NamedSharding(mesh, P("dcn", None))
         )
-        jitted_op = jax.jit(all_to_all_dcn_op)
+        jitted_op = jax.jit(f)
         dcn_average_time_ms_list = simple_timeit(
             jitted_op,
             sharded_matrix,
@@ -640,13 +640,13 @@ def all_to_all_benchmark(
             out_specs=P(None, None),
             check_rep=False,
         )
-        def all_to_all_ici_op(x):
+        def f(x):
             return jax.lax.all_to_all(x, "ici", split_axis=0, concat_axis=0, tiled=True)
 
         sharded_matrix = jax.device_put(
             matrix, jax.sharding.NamedSharding(mesh, P(None, None))
         )
-        jitted_op = jax.jit(all_to_all_ici_op)
+        jitted_op = jax.jit(f)
         ici_average_time_ms_list = simple_timeit(
             jitted_op,
             sharded_matrix,

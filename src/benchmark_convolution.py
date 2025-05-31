@@ -41,7 +41,7 @@ def convolve_common(
     """
 
     @partial(jax.jit, static_argnames=["mode"])
-    def convolve(x, kernel, mode):
+    def f(x, kernel, mode):
         return convolve_fn(x, kernel, mode=mode)
 
     x = jnp.arange(np.prod(input_shape)).reshape(input_shape).astype(jnp.bfloat16)
@@ -50,7 +50,7 @@ def convolve_common(
     )
 
     # Warm up
-    output = convolve(x, kernel, padding_mode).block_until_ready()
+    output = f(x, kernel, padding_mode).block_until_ready()
 
     print(f"{task_name} Benchmark:")
     print(
@@ -60,7 +60,7 @@ def convolve_common(
 
     # Time the operation
     time_ms_list = simple_timeit(
-        convolve,
+        f,
         x,
         kernel,
         padding_mode,
@@ -284,7 +284,7 @@ def lax_conv_general_dilated(
     kernel = jnp.arange(np.prod(kernel_shape)).reshape(kernel_shape).astype(dtype)
 
     @partial(jax.jit, static_argnames=["mode", "stride", "dilation"])
-    def convolve(x, kernel, stride, dilation, mode):
+    def f(x, kernel, stride, dilation, mode):
         return jax.lax.conv_general_dilated(
             x,
             kernel,
@@ -295,7 +295,7 @@ def lax_conv_general_dilated(
         )
 
     # Run once.
-    output = convolve(x, kernel, stride, dilation, padding_mode).block_until_ready()
+    output = f(x, kernel, stride, dilation, padding_mode).block_until_ready()
 
     print("lax_conv_general_dilated Benchmark:")
     print(
@@ -306,7 +306,7 @@ def lax_conv_general_dilated(
 
     # Time the operation
     time_ms_list = simple_timeit(
-        convolve,
+        f,
         x,
         kernel,
         stride,

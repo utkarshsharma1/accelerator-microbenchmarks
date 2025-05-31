@@ -87,7 +87,7 @@ def naive_attention_benchmark(
     """Naive attention benchmark."""
 
     @partial(jax.jit, static_argnames=["causal", "scale"])
-    def naive_attention(q, k, v, causal, scale):
+    def f(q, k, v, causal, scale):
         # qkv shape: ('batch', 'heads', 'length', 'kv')
         _, _, _, k_kv_size = k.shape
         _, _, seq_lengh, _ = q.shape
@@ -109,12 +109,12 @@ def naive_attention_benchmark(
     # Generate QKV.
     q, k, v = generate_qkv(batch, seq_len, d_model, num_heads)
     # Run once
-    output = naive_attention(q, k, v, causal, scale)
+    output = f(q, k, v, causal, scale)
     jax.block_until_ready(output)
 
     # Run benchmark
     time_ms_list = simple_timeit(
-        naive_attention,
+        f,
         q,
         k,
         v,
@@ -156,7 +156,7 @@ def pallas_flash_attention_benchmark(
     """Benchmarks the Pallas flash attention kernel."""
 
     @partial(jax.jit, static_argnames=["causal"])
-    def pallas_attention(q, k, v, causal):
+    def f(q, k, v, causal):
         return pallas_flash_attention.mha_reference(
             q, k, v, ab=None, segment_ids=None, causal=causal
         )
@@ -164,12 +164,12 @@ def pallas_flash_attention_benchmark(
     # Generate QKV.
     q, k, v = generate_qkv(batch, seq_len, d_model, num_heads)
     # Run once
-    output = pallas_attention(q, k, v, causal)
+    output = f(q, k, v, causal)
     jax.block_until_ready(output)
 
     # Run benchmark
     time_ms_list = simple_timeit(
-        pallas_attention,
+        f,
         q,
         k,
         v,
@@ -209,7 +209,7 @@ def splash_attention_benchmark(
     """Benchmarks the Splash attention kernel."""
 
     @partial(jax.jit, static_argnames=["causal"])
-    def splash_attention(q, k, v, causal):
+    def f(q, k, v, causal):
         # ('batch', 'heads', 'length', 'kv')
         _, _, seq_len, _ = q.shape
         sliding_window_size = SPLASH_ATTENTION_SLIDING_WINDOW_SIZE
@@ -247,12 +247,12 @@ def splash_attention_benchmark(
     # Generate QKV.
     q, k, v = generate_qkv(batch, seq_len, d_model, num_heads)
     # Run once
-    output = splash_attention(q, k, v, causal)
+    output = f(q, k, v, causal)
     jax.block_until_ready(output)
 
     # Run benchmark
     time_ms_list = simple_timeit(
-        splash_attention,
+        f,
         q,
         k,
         v,
@@ -291,7 +291,7 @@ def flax_nnx_attention_benchmark(
     """Benchmarks the Flax nnx attention."""
 
     @jax.jit
-    def flax_attention(q, k, v):
+    def f(q, k, v):
         output = nnx.dot_product_attention(q, k, v)
         return output
 
@@ -304,12 +304,12 @@ def flax_nnx_attention_benchmark(
     v = np.transpose(v, (0, 2, 1, 3))
 
     # Run once
-    output = flax_attention(q, k, v)
+    output = f(q, k, v)
     jax.block_until_ready(output)
 
     # Run benchmark
     time_ms_list = simple_timeit(
-        flax_attention,
+        f,
         q,
         k,
         v,
@@ -346,7 +346,7 @@ def flax_linen_attention_benchmark(
     """Benchmarks the Flax linen attention."""
 
     @jax.jit
-    def flax_attention(q, k, v):
+    def f(q, k, v):
         output = linen.dot_product_attention(q, k, v)
         return output
 
@@ -358,12 +358,12 @@ def flax_linen_attention_benchmark(
     v = np.transpose(v, (0, 2, 1, 3))
 
     # Run once
-    output = flax_attention(q, k, v)
+    output = f(q, k, v)
     jax.block_until_ready(output)
 
     # Run benchmark
     time_ms_list = simple_timeit(
-        flax_attention,
+        f,
         q,
         k,
         v,
@@ -417,17 +417,17 @@ def keras_attention_benchmark(
     )
 
     @partial(jax.jit, static_argnames=["causal"])
-    def keras_attention(q, k, v, causal):
+    def f(q, k, v, causal):
         output = layer(query=q, key=k, value=v, use_causal_mask=causal)
         return output
 
     # Run once
-    output = keras_attention(q, k, v, causal)
+    output = f(q, k, v, causal)
     jax.block_until_ready(output)
 
     # Run benchmark
     time_ms_list = simple_timeit(
-        keras_attention,
+        f,
         q,
         k,
         v,
