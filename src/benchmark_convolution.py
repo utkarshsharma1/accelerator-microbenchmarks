@@ -60,7 +60,7 @@ def convolve_common(
 
     # Time the operation
     time_ms_list = simple_timeit(
-        jitted_f,
+        f,
         x,
         kernel,
         padding_mode,

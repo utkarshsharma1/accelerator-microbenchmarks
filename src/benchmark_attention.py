@@ -156,7 +156,7 @@ def pallas_flash_attention_benchmark(
     """Benchmarks the Pallas flash attention kernel."""
 
     @partial(jax.jit, static_argnames=["causal"])
-    def pallas_attention(q, k, v, causal):
+    def f(q, k, v, causal):
         return pallas_flash_attention.mha_reference(
             q, k, v, ab=None, segment_ids=None, causal=causal
         )
@@ -164,12 +164,12 @@ def pallas_flash_attention_benchmark(
     # Generate QKV.
     q, k, v = generate_qkv(batch, seq_len, d_model, num_heads)
     # Run once
-    output = pallas_attention(q, k, v, causal)
+    output = f(q, k, v, causal)
     jax.block_until_ready(output)
 
     # Run benchmark
     time_ms_list = simple_timeit(
-        pallas_attention,
+        f,
         q,
         k,
         v,
