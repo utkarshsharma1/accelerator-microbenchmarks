@@ -21,8 +21,13 @@ gcloud container clusters get-credentials ${CLUSTER_NAME} \
 xpk workload create \
   --cluster=${CLUSTER_NAME} \
   --device-type=${TPU_TYPE} \
-  --command="python src/run_benchmark.py --config=configs/collective_v6e_256_utksharma.yaml \
+  --command="git clone https://github.com/utkarshsharma1/accelerator-microbenchmarks.git \
+  && cd accelerator-microbenchmarks && pip install -r requirements.txt && \
+  python src/run_benchmark.py --config=configs/collective_v6e_256_utksharma.yaml \
   && gsutil cp -r /tmp/microbenchmarks gs://v5p-microbenchmarks/v5p-256-$(date +%Y-%m-%d-%H-%M-%S)/" \
   --num-slices=${NUM_SLICES} \
-  --base-docker-image=us-docker.pkg.dev/cloud-tpu-images/jax-stable-stack/tpu:jax0.5.2-rev1 \
+  --docker-image=us-docker.pkg.dev/cloud-tpu-images/jax-stable-stack/tpu:jax0.5.2-rev1 \
   --workload=${WORKLOAD_NAME}
+
+# Wait for the workload to finish, then delete at the end.
+xpk workload delete --cluster=${CLUSTER_NAME} --workload=${WORKLOAD_NAME}
