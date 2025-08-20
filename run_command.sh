@@ -23,8 +23,8 @@ xpk workload create \
   --device-type=${TPU_TYPE} \
   --command="git clone https://github.com/utkarshsharma1/accelerator-microbenchmarks.git \
   && cd accelerator-microbenchmarks && pip install -r requirements.txt && \
-  python src/run_benchmark.py --config=configs/collective_v6e_256_utksharma.yaml \
-  && gsutil cp -r /tmp/microbenchmarks gs://v5p-microbenchmarks/v5p-256-$(date +%Y-%m-%d-%H-%M-%S)/" \
+  python src/run_benchmark.py --config=configs/xlml_v5p_256_utksharma.yaml \
+  && gsutil -m cp -r /tmp/microbenchmarks gs://v5p-microbenchmarks/v5p-256-$(date +%Y-%m-%d-%H-%M-%S)/" \
   --num-slices=${NUM_SLICES} \
   --docker-image=us-docker.pkg.dev/cloud-tpu-images/jax-stable-stack/tpu:jax0.5.2-rev1 \
   --workload=${WORKLOAD_NAME}
