@@ -346,7 +346,7 @@ def all_gather_benchmark(
     if dcn_size > 1:
 
         @partial(
-            shard_map, mesh=mesh, in_specs=P("dcn", None), out_specs=P("dcn", None)
+            shard_map, mesh=mesh, in_specs=P("dcn", None), out_specs=P(None, None)
         )
         def f(x):
             return jax.lax.all_gather(x, "dcn", tiled=True)
@@ -371,7 +371,7 @@ def all_gather_benchmark(
         @partial(
             shard_map,
             mesh=mesh,
-            in_specs=P(None, None),
+            in_specs=P(None, "ici"),
             out_specs=P(None, None),
             check_rep=False,
         )
@@ -379,7 +379,7 @@ def all_gather_benchmark(
             return jax.lax.all_gather(x, "ici", tiled=True)
 
         sharded_matrix = jax.device_put(
-            matrix, jax.sharding.NamedSharding(mesh, P(None, None))
+            matrix, jax.sharding.NamedSharding(mesh, P(None, "ici"))
         )
         jitted_op = jax.jit(f)
         ici_average_time_ms_list = simple_timeit(
@@ -437,7 +437,10 @@ def all_gather_benchmark_calculate_metrics(
         # each sharded matrix size is matrix_size_gbyte / ici_size and then it needs
         # to use (ici_size - 1) steps in a ring algorithm
         ici_bandwidth_gbyte_s_list = [
-                matrix_size_gbyte * (ici_size - 1) / (ici_average_time_ms / 1e3)
+                matrix_size_gbyte 
+                * (ici_size - 1) 
+                / ici_size 
+                / (ici_average_time_ms / 1e3)
                 for ici_average_time_ms in ici_average_time_ms_list
         ]
         ici_bandwidth_gbyte_s_statistics = MetricsStatistics(
