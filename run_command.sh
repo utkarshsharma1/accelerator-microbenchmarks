@@ -35,7 +35,7 @@ xpk workload delete --cluster=${CLUSTER_NAME} --workload=${WORKLOAD_256}
 # Generate report
 JSONL_128="${GCS_BASE_PATH}/v5p-128/metrics_report.jsonl"
 JSONL_256="${GCS_BASE_PATH}/v5p-256/metrics_report.jsonl"
-LOCAL_EXCEL="/tmp/combined_benchmark_report.xlsx"
+LOCAL_EXCEL="/report_data/combined_benchmark_report.xlsx"
 GCS_EXCEL_PATH="${GCS_BASE_PATH}/combined_report_$(date +%Y-%m-%d-%H-%M-%S).xlsx"
 
 python -m pip install --upgrade google-cloud-storage openpyxl
