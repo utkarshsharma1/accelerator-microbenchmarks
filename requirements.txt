@@ -9,3 +9,9 @@ ray[default]
 tensorboard-plugin-profile
 # Install tensorflow to avoid spurring "Can't import tensorflow.python.profiler.trace" error from jax.profiler.
 tensorflow
+openpyxl
+google-cloud-storage
+jax
+jaxlib
+pyyaml
+ray
