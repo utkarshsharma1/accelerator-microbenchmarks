@@ -5,6 +5,7 @@ from collections import defaultdict
 from openpyxl import Workbook
 from google.cloud import storage
 import logging
+import io
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
@@ -32,7 +33,18 @@ def download_gcs_blob_as_text(gcs_path):
         logging.error(f"Failed to download {gcs_path}: {e}")
         raise
 
-def generate_combined_excel_report(jsonl_gcs_path_128, jsonl_gcs_path_256, excel_local_path):
+def upload_to_gcs(bucket_name, blob_name, data):
+    try:
+        storage_client = storage.Client()
+        bucket = storage_client.bucket(bucket_name)
+        blob = bucket.blob(blob_name)
+        blob.upload_from_file(data, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        logging.info(f"Uploaded to gs://{bucket_name}/{blob_name}")
+    except Exception as e:
+        logging.error(f"Failed to upload to gs://{bucket_name}/{blob_name}: {e}")
+        raise
+
+def generate_combined_excel_report(jsonl_gcs_path_128, jsonl_gcs_path_256, excel_gcs_path):
     logging.info(f"Generating combined report from {jsonl_gcs_path_128} and {jsonl_gcs_path_256}")
 
     data_by_test = defaultdict(lambda: defaultdict(dict))
@@ -108,16 +120,25 @@ def generate_combined_excel_report(jsonl_gcs_path_128, jsonl_gcs_path_256, excel
             current_col += 5  # 1 dim col + 2 data cols + 2 spacer cols
 
     try:
-        os.makedirs(os.path.dirname(excel_local_path), exist_ok=True)
-        wb.save(excel_local_path)
-        logging.info(f"Combined Excel report saved locally to {excel_local_path}")
+        excel_buffer = io.BytesIO()
+        wb.save(excel_buffer)
+        excel_buffer.seek(0)
+
+        if not excel_gcs_path.startswith("gs://"):
+            raise ValueError("GCS output path must start with gs://")
+        parts = excel_gcs_path[5:].split("/", 1)
+        bucket_name = parts[0]
+        blob_name = parts[1]
+        upload_to_gcs(bucket_name, blob_name, excel_buffer)
+        logging.info(f"Combined Excel report uploaded to {excel_gcs_path}")
+
     except Exception as e:
-        logging.error(f"Failed to save Excel file {excel_local_path}: {e}")
+        logging.error(f"Failed to save or upload Excel file: {e}")
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Generate combined benchmark report.")
+    parser = argparse.ArgumentParser(description="Generate combined benchmark report and upload to GCS.")
     parser.add_argument("--gcs_path_128", required=True, help="GCS path to metrics_report.jsonl for 128 cores")
     parser.add_argument("--gcs_path_256", required=True, help="GCS path to metrics_report.jsonl for 256 cores")
-    parser.add_argument("--local_output", required=True, help="Local path to save the generated Excel file")
+    parser.add_argument("--gcs_output_path", required=True, help="GCS path to save the generated Excel file")
     args = parser.parse_args()
-    generate_combined_excel_report(args.gcs_path_128, args.gcs_path_256, args.local_output)
+    generate_combined_excel_report(args.gcs_path_128, args.gcs_path_256, args.gcs_output_path)
