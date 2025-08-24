@@ -27,7 +27,7 @@ TPU_TYPE_256="v5p-256"
 CONFIG_256="configs/xlml_v5p_256_utksharma.yaml"
 WORKLOAD_256="prisha-mb-256"
 GCS_PATH_256="${GCS_BASE_PATH}/${TPU_TYPE_256}/metrics_report.jsonl"
-XPK_COMMAND_256="git clone  clone -b ${BRANCH_NAME} https://github.com/prishajain1/accelerator-microbenchmarks.git && cd accelerator-microbenchmarks && pip install -r requirements.txt && python src/run_benchmark.py --config=${CONFIG_256} && gsutil -m cp /tmp/microbenchmarks/outputs/metrics_report.jsonl ${GCS_PATH_256}"
+XPK_COMMAND_256="git clone -b ${BRANCH_NAME} https://github.com/prishajain1/accelerator-microbenchmarks.git && cd accelerator-microbenchmarks && pip install -r requirements.txt && python src/run_benchmark.py --config=${CONFIG_256} && gsutil -m cp /tmp/microbenchmarks/outputs/metrics_report.jsonl ${GCS_PATH_256}"
 xpk workload create --cluster=${CLUSTER_NAME} --device-type=${TPU_TYPE_256} --command="${XPK_COMMAND_256}" --num-slices=1 --docker-image=${DOCKER_IMAGE} --workload=${WORKLOAD_256}
 # WAIT FOR THIS WORKLOAD TO COMPLETE SUCCESSFULLY, THEN DELETE THE WORKLOAD.
 xpk workload delete --cluster=${CLUSTER_NAME} --workload=${WORKLOAD_256}
