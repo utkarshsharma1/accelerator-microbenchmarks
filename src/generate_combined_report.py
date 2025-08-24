@@ -15,7 +15,7 @@ CORE_MAP = {
     128: 256   # ici_size 128 -> 256 cores
 }
 # The fixed column headers for core counts in the report
-CORE_COLUMNS = sorted(CORE_MAP.values()) # Results in [128, 256]
+CORE_COLUMNS = sorted(CORE_MAP.values()) 
 
 def download_gcs_blob_as_text(gcs_path):
     try:
