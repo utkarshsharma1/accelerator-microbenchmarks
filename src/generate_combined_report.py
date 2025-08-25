@@ -117,7 +117,7 @@ def generate_combined_excel_report(jsonl_gcs_path_128, jsonl_gcs_path_256, excel
                     metric_val = core_metrics.get(metric) if core_metrics else ""
                     ws.cell(row=3 + row_idx, column=current_col + 1 + i, value=metric_val)
 
-            current_col += 5  # 1 dim col + 2 data cols + 2 spacer cols
+            current_col += 4  # 1 dim col + 2 data cols + 1 spacer cols
 
     try:
         excel_buffer = io.BytesIO()
