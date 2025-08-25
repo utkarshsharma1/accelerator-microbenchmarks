@@ -20,6 +20,12 @@ import ray
 from concurrent.futures import ThreadPoolExecutor
 import os
 import copy
+import subprocess
+try:
+    from generate_combined_report import generate_excel_report
+except ImportError:
+    print("Warning: generate_combined_report module not found. Reporting features will not be available.")
+    generate_excel_report = None
 
 
 COLLECTIVE_BENCHMARK_MAP = {
@@ -77,6 +83,7 @@ dtype_mapping = {
 # Always dump HLOs
 TMP_XLA_DUMP_DIR = "/tmp/microbenchmarks/hlo_graphs"
 os.environ["XLA_FLAGS"] = f"--xla_dump_to={TMP_XLA_DUMP_DIR}"
+LOCAL_OUTPUT_JSONL = "/tmp/microbenchmarks/outputs/metrics_report.jsonl"
 
 
 def get_benchmark_config(config_path: str) -> Dict[str, Any]:
@@ -300,7 +307,20 @@ def run_single_benchmark(benchmark_config: Dict[str, Any]):
         write_to_csv(f"{csv_path}/{test_name}.csv", calculate_metrics_results)
 
 
-def main(config_path: str, multithreaded: bool):
+def upload_local_file_to_gcs(local_path, gcs_path):
+    """Uploads a local file to GCS using gsutil."""
+    try:
+        print(f"Uploading {local_path} to {gcs_path}...")
+        subprocess.run(['gsutil', 'cp', local_path, gcs_path], check=True)
+        print(f"Successfully uploaded {local_path} to {gcs_path}")
+    except subprocess.CalledProcessError as e:
+        print(f"Error uploading to GCS: {e}")
+        raise
+    except FileNotFoundError:
+        print("Error: gsutil command not found. Ensure Google Cloud SDK is installed.")
+        raise
+
+def main(config_path: str, multithreaded: bool, args: argparse.Namespace):
     """Main function."""
     # Load configuration
     config = get_benchmark_config(config_path)
@@ -314,6 +334,9 @@ def main(config_path: str, multithreaded: bool):
             file_path = os.path.join(TMP_XLA_DUMP_DIR, filename)
             if os.path.isfile(file_path):
                 os.remove(file_path)
+
+    # Ensure the directory for the JSONL output exists
+    os.makedirs(os.path.dirname(LOCAL_OUTPUT_JSONL), exist_ok=True)
 
     if multithreaded:
         ray.init(
@@ -339,6 +362,38 @@ def main(config_path: str, multithreaded: bool):
     else:
         for benchmark_config in benchmarks:
             run_single_benchmark(benchmark_config)
+
+    # Report Generation Logic
+    if args.generate_report:
+        print("--- Report generation requested ---")
+        if not all([args.gcs_jsonl_path, args.tpu_type, args.gcs_excel_path]):
+            print("Error: --gcs_jsonl_path, --tpu_type, and --gcs_excel_path are required when --generate_report is set.")
+            return
+
+        if not os.path.exists(LOCAL_OUTPUT_JSONL):
+            print(f"Error: Local JSONL file not found at {LOCAL_OUTPUT_JSONL}")
+            return
+
+        if generate_excel_report is None:
+            print("Error: generate_excel_report function not available. Cannot generate report.")
+            return
+
+        try:
+            # 1. Upload the local JSONL to GCS
+            upload_local_file_to_gcs(LOCAL_OUTPUT_JSONL, args.gcs_jsonl_path)
+
+            # 2. Call the report generator function
+            print(f"--- Generating Excel report for {args.tpu_type} ---")
+            generate_excel_report(
+                args.gcs_jsonl_path,
+                args.tpu_type,
+                args.gcs_excel_path
+            )
+            print("--- Excel report generation complete ---")
+        except Exception as e:
+            print(f"An error occurred during the report generation process: {e}")
+    else:
+        print("--- Report generation not requested ---")
 
 
 def run_benchmark_multithreaded(benchmark_config):
@@ -425,5 +480,11 @@ if __name__ == "__main__":
         default=False,
         help="Path to the YAML configuration file.",
     )
+    # Flags for report generation
+    parser.add_argument("--generate_report", action="store_true", help="Generate Excel report after benchmark")
+    parser.add_argument("--gcs_jsonl_path", help="GCS path to upload JSONL to, and for report generation input")
+    parser.add_argument("--tpu_type", help="TPU type (e.g., v5p-128)")
+    parser.add_argument("--gcs_excel_path", help="GCS path to save the generated Excel report")
+
     args = parser.parse_args()
-    main(args.config, args.multithreaded)
+    main(args.config, args.multithreaded, args)
