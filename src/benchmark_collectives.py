@@ -234,7 +234,7 @@ def psum_scatter_benchmark(
 
         @partial(shard_map, mesh=mesh, in_specs=P(None, None), out_specs=P(None, "ici"))
         def f(x):
-            return jax.lax.psum_scatter(x, "ici", tiled=True)
+            return jax.lax.psum_scatter(x, "ici", tiled=False)
 
         sharded_matrix = jax.device_put(
             matrix, jax.sharding.NamedSharding(mesh, P(None, None))
@@ -437,9 +437,9 @@ def all_gather_benchmark_calculate_metrics(
         # each sharded matrix size is matrix_size_gbyte / ici_size and then it needs
         # to use (ici_size - 1) steps in a ring algorithm
         ici_bandwidth_gbyte_s_list = [
-                matrix_size_gbyte 
-                * (ici_size - 1) 
-                / ici_size 
+                matrix_size_gbyte
+                * (ici_size - 1)
+                / ici_size
                 / (ici_average_time_ms / 1e3)
                 for ici_average_time_ms in ici_average_time_ms_list
         ]
