@@ -6,16 +6,42 @@ from openpyxl import Workbook
 from google.cloud import storage
 import logging
 import io
+import re
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
-# Map ici_size to number of cores
-CORE_MAP = {
-    64: 128,  # ici_size 64 -> 128 cores
-    128: 256   # ici_size 128 -> 256 cores
-}
-# The fixed column headers for core counts in the report
-CORE_COLUMNS = sorted(CORE_MAP.values()) 
+def parse_tpu_type(tpu_type):
+    """
+    Parses the TPU type string to extract chip count and determine
+    expected ici_size and core count for reporting.
+
+    Args:
+        tpu_type (str): The TPU type string, e.g., "v5p-128", "v5p-256".
+
+    Returns:
+        dict: Containing "chips", "expected_ici_size", and "cores".
+
+    Raises:
+        ValueError: If the chip count cannot be extracted.
+    """
+    match = re.search(r'(\d+)$', tpu_type)
+    if not match:
+        raise ValueError(f"Cannot extract chip count from tpu_type: {tpu_type}")
+
+    chips = int(match.group(1))
+
+    # Based on the original script's logic for v5p:
+    # - The number of cores reported is equal to the number of chips.
+    # - The 'ici_size' field in the JSON data seems to be half the number of chips.
+    cores_to_report = chips
+    expected_ici_size = chips // 2
+
+    logging.info(f"Parsed tpu_type '{tpu_type}': chips={chips}, expected_ici_size={expected_ici_size}, cores_to_report={cores_to_report}")
+    return {
+        "chips": chips,
+        "expected_ici_size": expected_ici_size,
+        "cores": cores_to_report
+    }
 
 def download_gcs_blob_as_text(gcs_path):
     try:
@@ -44,15 +70,22 @@ def upload_to_gcs(bucket_name, blob_name, data):
         logging.error(f"Failed to upload to gs://{bucket_name}/{blob_name}: {e}")
         raise
 
-def generate_combined_excel_report(jsonl_gcs_path_128, jsonl_gcs_path_256, excel_gcs_path):
-    logging.info(f"Generating combined report from {jsonl_gcs_path_128} and {jsonl_gcs_path_256}")
+def generate_excel_report(jsonl_gcs_path, tpu_type, excel_gcs_path):
+    logging.info(f"Generating report for TPU type {tpu_type} from {jsonl_gcs_path}")
+
+    try:
+        config = parse_tpu_type(tpu_type)
+    except ValueError as e:
+        logging.error(f"Error parsing TPU type: {e}")
+        return
+
+    expected_ici_size = config["expected_ici_size"]
+    core_count = config["cores"]
 
     data_by_test = defaultdict(lambda: defaultdict(dict))
 
-    def process_jsonl(jsonl_content, expected_ici_size):
+    def process_jsonl(jsonl_content):
         if not jsonl_content: return
-        core_count = CORE_MAP.get(expected_ici_size)
-        if core_count is None: return
 
         for line in jsonl_content.strip().split('\n'):
             if not line: continue
@@ -65,28 +98,24 @@ def generate_combined_excel_report(jsonl_gcs_path_128, jsonl_gcs_path_256, excel
                     matrix_dim = dims.get('matrix_dim')
                     ici_size = dims.get('ici_size')
 
-                    if test_name and matrix_dim is not None and ici_size is not None and int(ici_size) == expected_ici_size:
+                    if test_name and matrix_dim is not None and ici_size is not None:
                         try:
-                            dim = int(matrix_dim)
-                            data_by_test[test_name][dim][core_count] = metrics
+                            if int(ici_size) == expected_ici_size:
+                                dim = int(matrix_dim)
+                                data_by_test[test_name][dim][core_count] = metrics
                         except ValueError:
-                            logging.warning(f"Skipping record, non-int matrix_dim: {matrix_dim}")
+                            logging.warning(f"Skipping record, non-int matrix_dim or ici_size: {matrix_dim}, {ici_size}")
             except json.JSONDecodeError:
                 logging.warning(f"Skipping line, JSON decode error: {line}")
             except Exception as e:
                 logging.error(f"Error processing line: {e} - Line: {line}")
 
     try:
-        content_128 = download_gcs_blob_as_text(jsonl_gcs_path_128)
-        process_jsonl(content_128, 64)
+        jsonl_content = download_gcs_blob_as_text(jsonl_gcs_path)
+        process_jsonl(jsonl_content)
     except Exception as e:
-        logging.error(f"Could not process 128-core file: {e}")
-
-    try:
-        content_256 = download_gcs_blob_as_text(jsonl_gcs_path_256)
-        process_jsonl(content_256, 128)
-    except Exception as e:
-        logging.error(f"Could not process 256-core file: {e}")
+        logging.error(f"Could not process {tpu_type} file: {e}")
+        return
 
     if not data_by_test:
         logging.info("No valid data found to generate report.")
@@ -107,17 +136,15 @@ def generate_combined_excel_report(jsonl_gcs_path_128, jsonl_gcs_path_256, excel
         for metric in metrics_keys:
             ws.cell(row=1, column=current_col, value=metric)
             ws.cell(row=2, column=current_col, value="dimensions\\TPUs")
-            ws.cell(row=2, column=current_col + 1, value=CORE_COLUMNS[0])  # 128
-            ws.cell(row=2, column=current_col + 2, value=CORE_COLUMNS[1])  # 256
+            ws.cell(row=2, column=current_col + 1, value=core_count)
 
             for row_idx, dim in enumerate(matrix_dims):
                 ws.cell(row=3 + row_idx, column=current_col, value=dim)
-                for i, core_count in enumerate(CORE_COLUMNS):
-                    core_metrics = matrix_data[dim].get(core_count)
-                    metric_val = core_metrics.get(metric) if core_metrics else ""
-                    ws.cell(row=3 + row_idx, column=current_col + 1 + i, value=metric_val)
+                core_metrics = matrix_data[dim].get(core_count)
+                metric_val = core_metrics.get(metric) if core_metrics else ""
+                ws.cell(row=3 + row_idx, column=current_col + 1, value=metric_val)
 
-            current_col += 4  # 1 dim col + 2 data cols + 1 spacer cols
+            current_col += 3  # 1 dim col + 1 data col + 1 spacer col
 
     try:
         excel_buffer = io.BytesIO()
@@ -130,16 +157,15 @@ def generate_combined_excel_report(jsonl_gcs_path_128, jsonl_gcs_path_256, excel
         bucket_name = parts[0]
         blob_name = parts[1]
         upload_to_gcs(bucket_name, blob_name, excel_buffer)
-        logging.info(f"Combined Excel report uploaded to {excel_gcs_path}")
+        logging.info(f"Excel report uploaded to {excel_gcs_path}")
 
     except Exception as e:
         logging.error(f"Failed to save or upload Excel file: {e}")
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Generate combined benchmark report and upload to GCS.")
-    parser.add_argument("--gcs_path_128", required=True, help="GCS path to metrics_report.jsonl for 128 cores")
-    parser.add_argument("--gcs_path_256", required=True, help="GCS path to metrics_report.jsonl for 256 cores")
+    parser = argparse.ArgumentParser(description="Generate benchmark report for a single TPU type and upload to GCS.")
+    parser.add_argument("--gcs_path", required=True, help="GCS path to metrics_report.jsonl file")
+    parser.add_argument("--tpu_type", required=True, help="TPU type (e.g., v5p-128, v5p-256)")
     parser.add_argument("--gcs_output_path", required=True, help="GCS path to save the generated Excel file")
     args = parser.parse_args()
-    generate_combined_excel_report(args.gcs_path_128, args.gcs_path_256, args.gcs_output_path)
-
+    generate_excel_report(args.gcs_path, args.tpu_type, args.gcs_output_path)

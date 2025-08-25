@@ -4,38 +4,34 @@ ZONE="europe-west4-b"
 PROJECT_ID="cloud-tpu-multipod-dev"
 DOCKER_IMAGE="us-docker.pkg.dev/cloud-tpu-images/jax-stable-stack/tpu:jax0.5.2-rev1"
 RUN_ID=$(date +%Y-%m-%d-%H-%M-%S)
+
+# modify as per need (v5p-128/v5p-256)
+TPU_TYPE="v5p-128"
 GCS_BASE_PATH="gs://v5p-microbenchmarks/report_data_${RUN_ID}"
 
+# gcloud setup
 gcloud config set project ${PROJECT_ID}
 gcloud config set compute/zone ${ZONE}
 gcloud container clusters get-credentials ${CLUSTER_NAME} --region ${REGION} --project ${PROJECT_ID}
 
+# Benchmark variables
+CONFIG_FILE="configs/xlml_${TPU_TYPE}_utksharma.yaml"
+WORKLOAD_NAME="prisha-mb-${TPU_TYPE}"
+GCS_JSONL_PATH="${GCS_BASE_PATH}/${TPU_TYPE}/metrics_report.jsonl"
 
-# Run v5p-128 Benchmark
-TPU_TYPE_128="v5p-128"
-CONFIG_128="configs/xlml_v5p_128_utksharma.yaml"
-WORKLOAD_128="prisha-mb-128"
-GCS_PATH_128="${GCS_BASE_PATH}/${TPU_TYPE_128}/metrics_report.jsonl"
-XPK_COMMAND_128="git clone https://github.com/utkarshsharma1/accelerator-microbenchmarks.git && cd accelerator-microbenchmarks && pip install -r requirements.txt && python src/run_benchmark.py --config=${CONFIG_128} && gsutil -m cp /tmp/microbenchmarks/outputs/metrics_report.jsonl ${GCS_PATH_128}"
-xpk workload create --cluster=${CLUSTER_NAME} --device-type=${TPU_TYPE_128} --command="${XPK_COMMAND_128}" --num-slices=1 --docker-image=${DOCKER_IMAGE} --workload=${WORKLOAD_128}
-# WAIT FOR THIS WORKLOAD TO COMPLETE SUCCESSFULLY, THEN DELETE THE WORKLOAD.
-xpk workload delete --cluster=${CLUSTER_NAME} --workload=${WORKLOAD_128}
+XPK_COMMAND="git clone https://github.com/utkarshsharma1/accelerator-microbenchmarks.git && cd accelerator-microbenchmarks && pip install -r requirements.txt && python src/run_benchmark.py --config=${CONFIG_FILE} && gsutil -m cp /tmp/microbenchmarks/outputs/metrics_report.jsonl ${GCS_JSONL_PATH}"
 
-# Run v5p-256 Benchmark
-TPU_TYPE_256="v5p-256"
-CONFIG_256="configs/xlml_v5p_256_utksharma.yaml"
-WORKLOAD_256="prisha-mb-256"
-GCS_PATH_256="${GCS_BASE_PATH}/${TPU_TYPE_256}/metrics_report.jsonl"
-XPK_COMMAND_256="git clone https://github.com/utkarshsharma1/accelerator-microbenchmarks.git && cd accelerator-microbenchmarks && pip install -r requirements.txt && python src/run_benchmark.py --config=${CONFIG_256} && gsutil -m cp /tmp/microbenchmarks/outputs/metrics_report.jsonl ${GCS_PATH_256}"
-xpk workload create --cluster=${CLUSTER_NAME} --device-type=${TPU_TYPE_256} --command="${XPK_COMMAND_256}" --num-slices=1 --docker-image=${DOCKER_IMAGE} --workload=${WORKLOAD_256}
-# WAIT FOR THIS WORKLOAD TO COMPLETE SUCCESSFULLY, THEN DELETE THE WORKLOAD.
-xpk workload delete --cluster=${CLUSTER_NAME} --workload=${WORKLOAD_256}
+xpk workload create --cluster=${CLUSTER_NAME} --device-type=${TPU_TYPE} --command="${XPK_COMMAND}" --num-slices=1 --docker-image=${DOCKER_IMAGE} --workload=${WORKLOAD_NAME}
 
+# Wait for workload to finish, then delete
+xpk workload delete --cluster=${CLUSTER_NAME} --workload=${WORKLOAD_NAME}
 
 # Generate report
-JSONL_128="${GCS_BASE_PATH}/v5p-128/metrics_report.jsonl"
-JSONL_256="${GCS_BASE_PATH}/v5p-256/metrics_report.jsonl"
-GCS_EXCEL_PATH="${GCS_BASE_PATH}/combined_benchmark_report.xlsx"
+GCS_EXCEL_PATH="${GCS_BASE_PATH}/${TPU_TYPE}_benchmark_report.xlsx"
 
 python -m pip install --upgrade google-cloud-storage openpyxl
-python src/generate_combined_report.py --gcs_path_128 "${JSONL_128}" --gcs_path_256 "${JSONL_256}" --gcs_output_path "${GCS_EXCEL_PATH}"
+python src/generate_combined_report.py \
+  --gcs_path "${GCS_JSONL_PATH}" \
+  --tpu_type "${TPU_TYPE}" \
+  --gcs_output_path "${GCS_EXCEL_PATH}"
+
