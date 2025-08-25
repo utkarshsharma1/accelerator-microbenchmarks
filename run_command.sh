@@ -15,7 +15,7 @@ gcloud config set compute/zone ${ZONE}
 gcloud container clusters get-credentials ${CLUSTER_NAME} --region ${REGION} --project ${PROJECT_ID}
 
 # Benchmark variables
-CONFIG_FILE="configs/xlml_${TPU_TYPE}_utksharma.yaml"
+CONFIG_FILE="configs/xlml_v5p_128_utksharma.yaml"
 WORKLOAD_NAME="prisha-mb-${TPU_TYPE}"
 GCS_JSONL_PATH="${GCS_BASE_PATH}/${TPU_TYPE}/metrics_report.jsonl"
 
