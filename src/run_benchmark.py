@@ -20,8 +20,6 @@ import ray
 from concurrent.futures import ThreadPoolExecutor
 import os
 import copy
-import sys
-import shutil
 
 
 COLLECTIVE_BENCHMARK_MAP = {
@@ -76,14 +74,8 @@ dtype_mapping = {
     # Add other dtypes as needed
 }
 
-# --------- ADDITIONS START ---------
-# Standard output directories within the container
-TMP_ROOT = "/tmp/microbenchmarks"
-TMP_XLA_DUMP_DIR = os.path.join(TMP_ROOT, "hlo_graphs")
-LOCAL_METRICS_OUTPUT_DIR = os.path.join(TMP_ROOT, "outputs")
-# --------- ADDITIONS END ---------
-
-# Original XLA_FLAGS setting
+# Always dump HLOs
+TMP_XLA_DUMP_DIR = "/tmp/microbenchmarks/hlo_graphs"
 os.environ["XLA_FLAGS"] = f"--xla_dump_to={TMP_XLA_DUMP_DIR}"
 
 
@@ -128,7 +120,7 @@ def get_benchmark_functions(
 
 
 def preprocess_benchmark_param(
-    benchmark_param: Dict[str, Any], trace_dir: str = None
+    benchmark_param: Dict[str, Any], trace_dir: string = None
 ) -> Dict[str, Any]:
     """Preprocess the benchmark parameter before running the benchmark."""
     if "dtype" in benchmark_param:
@@ -207,13 +199,10 @@ def generate_benchmark_params_sweeping(
 def write_to_csv(csv_path: str, calculate_metrics_results: List[Dict[str, Any]]):
     """Write the metrics results to a CSV file."""
     if not calculate_metrics_results:
-        # Changed from raise to print warning to be more permissive
-        print("Warning: 0 metrics results are collected, not writing CSV.")
-        return
+        raise ValueError("0 metrics results are collected.")
     if not isinstance(calculate_metrics_results[0], dict):
         raise ValueError("metrics result is not a dict.")
     # Open the CSV file for writing
-    os.makedirs(os.path.dirname(csv_path), exist_ok=True) # Ensure dir exists
     with open(csv_path, mode="w", newline="") as csv_file:
         # Use the keys from the first item as the headers
 
@@ -239,7 +228,7 @@ def run_single_benchmark(benchmark_config: Dict[str, Any]):
         benchmark_params += generate_benchmark_params_sweeping(benchmark_sweep_params)
     csv_path = benchmark_config.get("csv_path")
     trace_dir = benchmark_config.get("trace_dir")
-    xlml_metrics_dir = benchmark_config.get("xlml_metrics_dir") # Keep for original functionality
+    xlml_metrics_dir = benchmark_config.get("xlml_metrics_dir")
     xla_dump_dir = benchmark_config.get("xla_dump_dir")
 
     if not benchmark_name:
@@ -260,9 +249,11 @@ def run_single_benchmark(benchmark_config: Dict[str, Any]):
         print(f"Running benchmark: {benchmark_name} with params: {benchmark_param}")
         test_start_time = (
             datetime.datetime.now(tz=datetime.timezone.utc).isoformat() + "Z"
-        )
+        )  # "Z" indicates UTC
         benchmark_results = benchmark_func(**benchmark_param)
-        test_end_time = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
+        test_end_time = (
+            datetime.datetime.now(tz=datetime.timezone.utc).isoformat() + "Z"
+        )
 
         # Filter benchmark_results to include only keys present in
         # calculate_metrics_func
@@ -283,22 +274,7 @@ def run_single_benchmark(benchmark_config: Dict[str, Any]):
             **filtered_benchmark_param, **filtered_benchmark_results
         )
         calculate_metrics_results.append({"metadata": metadata, "metrics": metrics})
-
-        # --------- MODIFICATION START ---------
-        # Always write to the standard local directory for the combined report
-        maybe_write_metrics_file(
-            LOCAL_METRICS_OUTPUT_DIR,
-            metrics,
-            metadata,
-            benchmark_name,
-            test_start_time,
-            test_end_time,
-        )
-        # --------- MODIFICATION END ---------
-
-        # Keep original functionality if xlml_metrics_dir is specified in config
-        if xlml_metrics_dir and xlml_metrics_dir != LOCAL_METRICS_OUTPUT_DIR:
-            print(f"Also writing metrics to configured xlml_metrics_dir: {xlml_metrics_dir}")
+        if xlml_metrics_dir:
             maybe_write_metrics_file(
                 xlml_metrics_dir,
                 metrics,
@@ -307,14 +283,11 @@ def run_single_benchmark(benchmark_config: Dict[str, Any]):
                 test_start_time,
                 test_end_time,
             )
-
         # Post process the xla dump
         if xla_dump_dir:
-            dest_dump_path = os.path.join(LOCAL_METRICS_OUTPUT_DIR, xla_dump_dir)
-            print(f"Renaming XLA dump to {dest_dump_path}")
             rename_xla_dump(
                 tmp_xla_dump_dir=TMP_XLA_DUMP_DIR,
-                dest_xla_dump_dir=dest_dump_path,
+                dest_xla_dump_dir=xla_dump_dir,
                 benchmark_name=benchmark_name,
                 benchmark_param=original_benchmark_param,
             )
@@ -324,9 +297,7 @@ def run_single_benchmark(benchmark_config: Dict[str, Any]):
         test_name = f"t_{benchmark_name}_" + "".join(
             random.choices(string.ascii_uppercase + string.digits, k=10)
         )
-        # Write CSVs into the LOCAL_METRICS_OUTPUT_DIR as well
-        final_csv_path = os.path.join(LOCAL_METRICS_OUTPUT_DIR, csv_path)
-        write_to_csv(os.path.join(final_csv_path, f"{test_name}.csv"), calculate_metrics_results)
+        write_to_csv(f"{csv_path}/{test_name}.csv", calculate_metrics_results)
 
 
 def main(config_path: str, multithreaded: bool):
@@ -337,24 +308,37 @@ def main(config_path: str, multithreaded: bool):
     if not benchmarks or not isinstance(benchmarks, list):
         raise ValueError("Configuration must contain a 'benchmarks' list.")
 
-    # --------- MODIFICATION START ---------
-    # Setup standard output directories
-    shutil.rmtree(TMP_ROOT, ignore_errors=True)
-    os.makedirs(LOCAL_METRICS_OUTPUT_DIR, exist_ok=True)
-    os.makedirs(TMP_XLA_DUMP_DIR, exist_ok=True)
-    os.environ["XLA_FLAGS"] = f"--xla_dump_to={TMP_XLA_DUMP_DIR}"
-    # --------- MODIFICATION END ---------
+    # Clear the tmp dirs.
+    if os.path.exists(TMP_XLA_DUMP_DIR):
+        for filename in os.listdir(TMP_XLA_DUMP_DIR):
+            file_path = os.path.join(TMP_XLA_DUMP_DIR, filename)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
 
     if multithreaded:
-        print("Warning: Multithreaded mode needs explicit metric writing for combined report.")
-        # ... original ray init ...
+        ray.init(
+            runtime_env=ray.runtime_env.RuntimeEnv(
+                address="ray://tpu-ray-cluster-head-svc:10001",
+                env_vars={
+                    "XLA_IR_DEBUG": "1",
+                    "XLA_HLO_DEBUG": "1",
+                    "PJRT_DEVICE": "TPU",
+                    # "LIBTPU_INIT_ARGS": "--xla_tpu_scoped_vmem_limit_kib=25602",
+                },
+            )
+        )
+
+        # Calculate the number of TPU hosts within our Ray cluster...
+        # num_hosts = int(ray.available_resources()["TPU"]) // 4
+        print(ray.available_resources())
+        # print("Num hosts detected: %d", num_hosts)
+
         for benchmark_config in benchmarks:
             run_benchmark_multithreaded(benchmark_config)
+
     else:
         for benchmark_config in benchmarks:
             run_single_benchmark(benchmark_config)
-
-    print(f"Benchmark outputs are in {LOCAL_METRICS_OUTPUT_DIR}")
 
 
 def run_benchmark_multithreaded(benchmark_config):
@@ -373,9 +357,15 @@ def run_benchmark_multithreaded(benchmark_config):
 
     print(f"\n{'=' * 30}Starting benchmark '{benchmark_name}'{'=' * 30}\n")
 
+    # Start a trace if requested
+    test_name = f"t_{benchmark_name}_" + "".join(
+        random.choices(string.ascii_uppercase + string.digits, k=10)
+    )
+
+    # Preprocess benchmark parameters
     preprocessed_benchmark_params = [
-        preprocess_benchmark_param(copy.deepcopy(bp), trace_dir=None)
-        for bp in benchmark_params
+        preprocess_benchmark_param(benchmark_param, trace_dir=None)
+        for benchmark_param in benchmark_params
     ]
     calculate_metrics_results = []
 
@@ -396,11 +386,10 @@ def run_benchmark_multithreaded(benchmark_config):
         for future in future_to_param:
             benchmark_param = future_to_param[
                 future
-            ]
-            benchmark_results = future.result()
-            test_start_time = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
-            test_end_time = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
+            ]  # Retrieve the corresponding benchmark_param
+            benchmark_results = future.result()  # Get the result from the future
 
+            # Filter benchmark_results to include only keys present in calculate_metrics_func
             calculate_metrics_params = inspect.signature(
                 calculate_metrics_func
             ).parameters
@@ -410,28 +399,14 @@ def run_benchmark_multithreaded(benchmark_config):
                 if key in calculate_metrics_params
             }
 
+            # Call calculate_metrics_func with the filtered results and benchmark_param
             metadata, metrics = calculate_metrics_func(
                 **benchmark_param, **filtered_benchmark_results
             )
             calculate_metrics_results.append({"metadata": metadata, "metrics": metrics})
-            # --------- MODIFICATION START ---------
-            # Write metrics in multithreaded mode too
-            maybe_write_metrics_file(
-                LOCAL_METRICS_OUTPUT_DIR,
-                metrics,
-                metadata,
-                benchmark_name,
-                test_start_time,
-                test_end_time,
-            )
-            # --------- MODIFICATION END ---------
 
     if csv_path:
-        test_name = f"t_{benchmark_name}_" + "".join(
-            random.choices(string.ascii_uppercase + string.digits, k=10)
-        )
-        final_csv_path = os.path.join(LOCAL_METRICS_OUTPUT_DIR, csv_path)
-        write_to_csv(os.path.join(final_csv_path, f"{test_name}.csv"), calculate_metrics_results)
+        write_to_csv(f"{csv_path}/{test_name}.csv", calculate_metrics_results)
 
 
 if __name__ == "__main__":
@@ -448,7 +423,7 @@ if __name__ == "__main__":
         "--multithreaded",
         type=bool,
         default=False,
-        help="Path to the YAML configuration file.", # Incorrect help message
+        help="Path to the YAML configuration file.",
     )
     args = parser.parse_args()
     main(args.config, args.multithreaded)
