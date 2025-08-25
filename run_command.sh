@@ -7,7 +7,7 @@ export RUN_ID=$(date +%Y-%m-%d-%H-%M-%S)
 
 # Change as per need (v5p-128/v5p-256)
 export TPU_TYPE=v5p-128
-export GCS_BASE_PATH="gs://v5p-microbenchmarks"
+export GCS_BASE_PATH=#<gcs_base_path>
 export GCS_PATH="${GCS_BASE_PATH}/report_data_${RUN_ID}"
 
 # gcloud setup
