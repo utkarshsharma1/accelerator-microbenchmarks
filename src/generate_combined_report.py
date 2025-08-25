@@ -142,3 +142,4 @@ if __name__ == '__main__':
     parser.add_argument("--gcs_output_path", required=True, help="GCS path to save the generated Excel file")
     args = parser.parse_args()
     generate_combined_excel_report(args.gcs_path_128, args.gcs_path_256, args.gcs_output_path)
+
