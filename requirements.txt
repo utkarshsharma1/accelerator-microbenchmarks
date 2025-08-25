@@ -11,7 +11,5 @@ tensorboard-plugin-profile
 tensorflow
 openpyxl
 google-cloud-storage
-jax
-jaxlib
 pyyaml
 ray

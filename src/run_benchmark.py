@@ -1,7 +1,7 @@
 """This script runs microbenchmarks and collects metrics.
 
 Sample usage (on TPU vm):
-  $ python src/run_benchmark.py --config=configs/benchmark_collectives.yaml
+  $ python run_benchmark.py --config=configs/benchmark_collectives.yaml
 """
 
 import argparse
@@ -258,7 +258,9 @@ def run_single_benchmark(benchmark_config: Dict[str, Any]):
             benchmark_param, trace_dir=trace_dir
         )
         print(f"Running benchmark: {benchmark_name} with params: {benchmark_param}")
-        test_start_time = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
+        test_start_time = (
+            datetime.datetime.now(tz=datetime.timezone.utc).isoformat() + "Z"
+        )
         benchmark_results = benchmark_func(**benchmark_param)
         test_end_time = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
 
@@ -444,9 +446,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--multithreaded",
-        action='store_true', # Changed to store_true
+        type=bool,
         default=False,
-        help="Enable multithreaded benchmark execution.",
+        help="Path to the YAML configuration file.", # Incorrect help message
     )
     args = parser.parse_args()
     main(args.config, args.multithreaded)
