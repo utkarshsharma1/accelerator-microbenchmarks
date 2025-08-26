@@ -234,7 +234,7 @@ def psum_scatter_benchmark(
 
         @partial(shard_map, mesh=mesh, in_specs=P(None, None), out_specs=P(None, "ici"))
         def f(x):
-            return jax.lax.psum_scatter(x, "ici", tiled=False)
+            return jax.lax.psum_scatter(x, "ici", tiled=True)
 
         sharded_matrix = jax.device_put(
             matrix, jax.sharding.NamedSharding(mesh, P(None, None))
