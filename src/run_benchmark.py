@@ -13,16 +13,20 @@ import itertools
 import random
 import string
 from typing import Any, Callable, Dict, List, Tuple
-from benchmark_utils import maybe_write_metrics_file, rename_xla_dump, MetricsStatistics
+from benchmark_utils import maybe_write_metrics_file, rename_xla_dump
 import jax
 import yaml
 import ray
 from concurrent.futures import ThreadPoolExecutor
 import os
 import copy
-import pandas as pd
-import ast
-import json
+import subprocess
+try:
+    from generate_combined_report import generate_excel_report
+except ImportError:
+    print("Warning: generate_combined_report module not found. Reporting features will not be available.")
+    generate_excel_report = None
+
 
 COLLECTIVE_BENCHMARK_MAP = {
     "all_gather": "benchmark_collectives.all_gather_benchmark",
@@ -79,6 +83,7 @@ dtype_mapping = {
 # Always dump HLOs
 TMP_XLA_DUMP_DIR = "/tmp/microbenchmarks/hlo_graphs"
 os.environ["XLA_FLAGS"] = f"--xla_dump_to={TMP_XLA_DUMP_DIR}"
+LOCAL_OUTPUT_JSONL = "/tmp/microbenchmarks/outputs/metrics_report.jsonl"
 
 
 def get_benchmark_config(config_path: str) -> Dict[str, Any]:
@@ -199,71 +204,24 @@ def generate_benchmark_params_sweeping(
 
 
 def write_to_csv(csv_path: str, calculate_metrics_results: List[Dict[str, Any]]):
-    """Writes benchmark metrics to a CSV file.
-
-    This function takes a list of dictionaries, where each dictionary contains
-    the 'metadata' and 'metrics' from a benchmark run. It processes each
-    dictionary by flattening it, calculating additional statistics for specific
-    fields (like 'ici_average_time_ms_list'), and then converting it into a
-    pandas DataFrame. All resulting DataFrames are concatenated and written to
-    the specified CSV file.
-
-    Args:
-        csv_path: The path to the output CSV file.
-        calculate_metrics_results: A list of dictionaries with benchmark results.
-    """
+    """Write the metrics results to a CSV file."""
     if not calculate_metrics_results:
         raise ValueError("0 metrics results are collected.")
     if not isinstance(calculate_metrics_results[0], dict):
         raise ValueError("metrics result is not a dict.")
+    # Open the CSV file for writing
+    with open(csv_path, mode="w", newline="") as csv_file:
+        # Use the keys from the first item as the headers
 
-    def flatten_dict(current_dict: Dict) -> Dict:
-        """Recursively flattens a nested dictionary."""
-        output_dict = {}
-        for key, val in current_dict.items():
-            if isinstance(val, Dict):
-                output_dict.update(flatten_dict(val))
-            else:
-                # Try to evaluate string-formatted literals (e.g., "[1, 2, 3]")
-                try:
-                    output_dict[key] = ast.literal_eval(val)
-                except (ValueError, SyntaxError, TypeError):
-                    # If it's not a valid literal, keep it as a string.
-                    output_dict[key] = val
-        return output_dict
+        headers = calculate_metrics_results[0].keys()
 
-    def convert_dict_to_df(target_dict: Dict) -> pd.DataFrame:
-        """Converts a single benchmark result dictionary to a pandas DataFrame."""
-        flattened_dict = flatten_dict(target_dict)
-        
-        # This section is specific to collective benchmarks that produce
-        # 'ici_average_time_ms_list'.
-        if "ici_average_time_ms_list" in flattened_dict:
-            # Calculate statistics for the timing list.
-            ici_average_time_ms_statistics = MetricsStatistics(
-                metrics_list=flattened_dict["ici_average_time_ms_list"],
-                metrics_name="ici_average_time_ms",
-            ).statistics
-            for key, val in ici_average_time_ms_statistics.items():
-                flattened_dict["ici_average_time_ms_" + key] = val
+        # Initialize a DictWriter with the headers
+        writer = csv.DictWriter(csv_file, fieldnames=headers)
+        writer.writeheader()  # Write the header row
 
-            # Convert list to JSON string for CSV storage.
-            flattened_dict["ici_average_time_ms_list"] = json.dumps(
-                flattened_dict["ici_average_time_ms_list"]
-            )
-
-        df = pd.DataFrame(flattened_dict, index=[0])
-        return df
-
-    # TODO(hylin2002@)
-    # This is a temporary workaround to generate a properly formatted CSV file for the output metrics.
-    # We should revert this PR and refactor the code such that metrics object is a flatten dict that can be easily exported as a CSV.
-    # For other information that requires nested structures, we should serialize it into a json file."
-    df_list = [convert_dict_to_df(each) for each in calculate_metrics_results]
-    df = pd.concat(df_list, ignore_index=True)
-
-    df.to_csv(csv_path, index=False, sep="\t")
-
+        # Iterate through each result and write to the CSV
+        for each in calculate_metrics_results:
+            writer.writerow(each)  # Write each row
     print(f"Metrics written to CSV at {csv_path}.")
 
 
@@ -349,7 +307,20 @@ def run_single_benchmark(benchmark_config: Dict[str, Any]):
         write_to_csv(f"{csv_path}/{test_name}.csv", calculate_metrics_results)
 
 
-def main(config_path: str, multithreaded: bool):
+def upload_local_file_to_gcs(local_path, gcs_path):
+    """Uploads a local file to GCS using gsutil."""
+    try:
+        print(f"Uploading {local_path} to {gcs_path}...")
+        subprocess.run(['gsutil', 'cp', local_path, gcs_path], check=True)
+        print(f"Successfully uploaded {local_path} to {gcs_path}")
+    except subprocess.CalledProcessError as e:
+        print(f"Error uploading to GCS: {e}")
+        raise
+    except FileNotFoundError:
+        print("Error: gsutil command not found. Ensure Google Cloud SDK is installed.")
+        raise
+
+def main(config_path: str, multithreaded: bool, args: argparse.Namespace):
     """Main function."""
     # Load configuration
     config = get_benchmark_config(config_path)
@@ -363,6 +334,9 @@ def main(config_path: str, multithreaded: bool):
             file_path = os.path.join(TMP_XLA_DUMP_DIR, filename)
             if os.path.isfile(file_path):
                 os.remove(file_path)
+
+    # Ensure the directory for the JSONL output exists
+    os.makedirs(os.path.dirname(LOCAL_OUTPUT_JSONL), exist_ok=True)
 
     if multithreaded:
         ray.init(
@@ -388,6 +362,38 @@ def main(config_path: str, multithreaded: bool):
     else:
         for benchmark_config in benchmarks:
             run_single_benchmark(benchmark_config)
+
+    # Report Generation Logic
+    if args.generate_report:
+        print("--- Report generation requested ---")
+        if not all([args.gcs_jsonl_path, args.tpu_type, args.gcs_excel_path]):
+            print("Error: --gcs_jsonl_path, --tpu_type, and --gcs_excel_path are required when --generate_report is set.")
+            return
+
+        if not os.path.exists(LOCAL_OUTPUT_JSONL):
+            print(f"Error: Local JSONL file not found at {LOCAL_OUTPUT_JSONL}")
+            return
+
+        if generate_excel_report is None:
+            print("Error: generate_excel_report function not available. Cannot generate report.")
+            return
+
+        try:
+            # 1. Upload the local JSONL to GCS
+            upload_local_file_to_gcs(LOCAL_OUTPUT_JSONL, args.gcs_jsonl_path)
+
+            # 2. Call the report generator function
+            print(f"--- Generating Excel report for {args.tpu_type} ---")
+            generate_excel_report(
+                args.gcs_jsonl_path,
+                args.tpu_type,
+                args.gcs_excel_path
+            )
+            print("--- Excel report generation complete ---")
+        except Exception as e:
+            print(f"An error occurred during the report generation process: {e}")
+    else:
+        print("--- Report generation not requested ---")
 
 
 def run_benchmark_multithreaded(benchmark_config):
@@ -474,5 +480,11 @@ if __name__ == "__main__":
         default=False,
         help="Path to the YAML configuration file.",
     )
+    # Flags for report generation
+    parser.add_argument("--generate_report", action="store_true", help="Generate Excel report after benchmark")
+    parser.add_argument("--gcs_jsonl_path", help="GCS path to upload JSONL to, and for report generation input")
+    parser.add_argument("--tpu_type", help="TPU type (e.g., v5p-128)")
+    parser.add_argument("--gcs_excel_path", help="GCS path to save the generated Excel report")
+
     args = parser.parse_args()
-    main(args.config, args.multithreaded)
+    main(args.config, args.multithreaded, args)
