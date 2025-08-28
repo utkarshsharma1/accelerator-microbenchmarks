@@ -350,7 +350,11 @@ def all_gather_benchmark(
     if dcn_size > 1:
 
         @partial(
-            shard_map, mesh=mesh, in_specs=P("dcn", None), out_specs=P(None, None)
+            shard_map,
+            mesh=mesh,
+            in_specs=P("dcn", None),
+            out_specs=P(None, None),
+            check_rep=False,
         )
         def f(x):
             return jax.lax.all_gather(x, "dcn", tiled=True)
