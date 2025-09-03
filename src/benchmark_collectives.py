@@ -99,12 +99,12 @@ def psum_benchmark(
     # ICI benchmark
     if ici_size > 1:
 
-        @partial(shard_map, mesh=mesh, in_specs=P(None, None), out_specs=P(None, None))
+        @partial(shard_map, mesh=mesh, in_specs=P(None, "ici"), out_specs=P(None, None))
         def f(x):
             return jax.lax.psum(x, "ici")
 
         sharded_matrix = jax.device_put(
-            matrix, jax.sharding.NamedSharding(mesh, P(None, None))
+            matrix, jax.sharding.NamedSharding(mesh, P(None, "ici"))
         )
         jitted_op = jax.jit(f)
         ici_average_time_ms_list = simple_timeit(
@@ -235,12 +235,12 @@ def psum_scatter_benchmark(
     # ICI benchmark
     if ici_size > 1:
 
-        @partial(shard_map, mesh=mesh, in_specs=P(None, None), out_specs=P(None, "ici"))
+        @partial(shard_map, mesh=mesh, in_specs=P(None, "ici"), out_specs=P(None, "ici"))
         def f(x):
             return jax.lax.psum_scatter(x, "ici", tiled=True)
 
         sharded_matrix = jax.device_put(
-            matrix, jax.sharding.NamedSharding(mesh, P(None, None))
+            matrix, jax.sharding.NamedSharding(mesh, P(None, "ici"))
         )
         jitted_op = jax.jit(f)
         ici_average_time_ms_list = simple_timeit(
